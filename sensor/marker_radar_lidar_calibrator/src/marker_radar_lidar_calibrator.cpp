@@ -14,7 +14,7 @@
 
 #include <marker_radar_lidar_calibrator/marker_radar_lidar_calibrator.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
-#include <tier4_autoware_utils/geometry/geometry.hpp>
+#include <autoware/universe_utils/geometry/geometry.hpp>
 
 #include <pcl/ModelCoefficients.h>
 #include <pcl/PCLPointCloud2.h>
@@ -1261,7 +1261,7 @@ void ExtrinsicReflectorBasedCalibrator::estimateTransformation(
     full_radar_to_radar_parallel_transformation.cast<double>());
 
   // Check that it is actually a 2D transformation
-  auto calibrated_2d_radar_to_radar_parallel_rpy = tier4_autoware_utils::getRPY(
+  auto calibrated_2d_radar_to_radar_parallel_rpy = autoware::universe_utils::getRPY(
     tf2::toMsg(calibrated_2d_radar_to_radar_parallel_transformation).orientation);
   double calibrated_2d_radar_to_radar_parallel_z =
     calibrated_2d_radar_to_radar_parallel_transformation.translation().z();

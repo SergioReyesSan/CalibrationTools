@@ -14,7 +14,7 @@
 
 #include "extrinsic_map_based_calibrator/grid_search_matching.hpp"
 
-#include "tier4_autoware_utils/math/unit_conversion.hpp"
+#include "autoware/universe_utils/math/unit_conversion.hpp"
 
 #include <omp.h>
 
@@ -120,21 +120,21 @@ Eigen::Matrix4d GridSearchMatching::getMatrix4d(
   const double & yaw)
 {
   Eigen::Matrix4d transformation_roll = Eigen::Matrix4d::Identity();
-  double phi = tier4_autoware_utils::deg2rad(roll);
+  double phi = autoware::universe_utils::deg2rad(roll);
   transformation_roll(1, 1) = std::cos(phi);
   transformation_roll(1, 2) = -sin(phi);
   transformation_roll(2, 1) = sin(phi);
   transformation_roll(2, 2) = std::cos(phi);
 
   Eigen::Matrix4d transformation_pitch = Eigen::Matrix4d::Identity();
-  double theta = tier4_autoware_utils::deg2rad(pitch);
+  double theta = autoware::universe_utils::deg2rad(pitch);
   transformation_pitch(0, 0) = std::cos(theta);
   transformation_pitch(0, 2) = sin(theta);
   transformation_pitch(2, 0) = -sin(theta);
   transformation_pitch(2, 2) = std::cos(theta);
 
   Eigen::Matrix4d transformation_yaw = Eigen::Matrix4d::Identity();
-  double psi = tier4_autoware_utils::deg2rad(yaw);
+  double psi = autoware::universe_utils::deg2rad(yaw);
   transformation_yaw(0, 0) = std::cos(psi);
   transformation_yaw(0, 1) = -sin(psi);
   transformation_yaw(1, 0) = sin(psi);
