@@ -13,7 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import debugpy
+debugpy.listen(5678)
+debugpy.wait_for_client()  # blocks execution until client is attached
 
 from collections import defaultdict
 import copy
@@ -118,55 +120,55 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.board_type = BoardEnum.CHESS_BOARD
         self.board_parameters: ParameterizedClass = None
         self.detector: BoardDetector = None
-        self.data_collector = DataCollector(self.cfg["data_collector"])
-        self.calibrator_dict: Dict[CalibratorEnum, Calibrator] = {}
+        # self.data_collector = DataCollector(self.cfg["data_collector"])
+        # self.calibrator_dict: Dict[CalibratorEnum, Calibrator] = {}
 
         self.image_view_mode = ImageViewMode.SOURCE_UNRECTIFIED
         self.paused = False
         self.last_detection = None
 
-        for calibrator_type in CalibratorEnum:
-            calibrator_cfg = defaultdict()
+        # for calibrator_type in CalibratorEnum:
+        #     calibrator_cfg = defaultdict()
 
-            if (
-                "calibrator_type" in self.cfg
-                and calibrator_type.value["name"] == self.cfg["calibrator_type"]
-            ):
-                calibrator_cfg = self.cfg["calibration_parameters"]
+        #     if (
+        #         "calibrator_type" in self.cfg
+        #         and calibrator_type.value["name"] == self.cfg["calibrator_type"]
+        #     ):
+        #         calibrator_cfg = self.cfg["calibration_parameters"]
 
-            calibrator = make_calibrator(calibrator_type, lock=self.lock, cfg=calibrator_cfg)
-            self.calibrator_dict[calibrator_type] = calibrator
+        #     calibrator = make_calibrator(calibrator_type, lock=self.lock, cfg=calibrator_cfg)
+        #     self.calibrator_dict[calibrator_type] = calibrator
 
-            calibrator.moveToThread(self.calibration_thread)
-            calibrator.calibration_results_signal.connect(self.process_calibration_results)
-            calibrator.evaluation_results_signal.connect(self.process_evaluation_results)
-            calibrator.partial_calibration_results_signal.connect(
-                self.process_partial_calibration_result
-            )
+        #     calibrator.moveToThread(self.calibration_thread)
+        #     calibrator.calibration_results_signal.connect(self.process_calibration_results)
+        #     calibrator.evaluation_results_signal.connect(self.process_evaluation_results)
+        #     calibrator.partial_calibration_results_signal.connect(
+        #         self.process_partial_calibration_result
+        #     )
 
-        # Qt logic
-        self.should_process_image.connect(self.process_data)
-        self.produced_data_signal.connect(self.process_new_data)
-        self.consumed_data_signal.connect(self.on_consumed)
+        # # Qt logic
+        # self.should_process_image.connect(self.process_data)
+        # self.produced_data_signal.connect(self.process_new_data)
+        # self.consumed_data_signal.connect(self.on_consumed)
 
-        self.central_widget = QWidget(self)
-        self.setCentralWidget(self.central_widget)
-        self.layout = QHBoxLayout(self.central_widget)
+        # self.central_widget = QWidget(self)
+        # self.setCentralWidget(self.central_widget)
+        # self.layout = QHBoxLayout(self.central_widget)
 
-        # Image View
-        self.make_image_view()
+        # # Image View
+        # self.make_image_view()
 
-        # Menu Widgets
-        self.left_menu_widget = QWidget(self.central_widget)
-        self.left_menu_widget.setFixedWidth(300)
-        self.left_menu_layout = QVBoxLayout(self.left_menu_widget)
-        self.left_menu_layout.setAlignment(Qt.AlignTop)
+        # # Menu Widgets
+        # self.left_menu_widget = QWidget(self.central_widget)
+        # self.left_menu_widget.setFixedWidth(300)
+        # self.left_menu_layout = QVBoxLayout(self.left_menu_widget)
+        # self.left_menu_layout.setAlignment(Qt.AlignTop)
 
-        self.right_menu_widget = QWidget(self.central_widget)
-        self.right_menu_widget.setFixedWidth(300)
-        self.right_menu_layout = QVBoxLayout(self.right_menu_widget)
-        self.right_menu_layout.setAlignment(Qt.AlignTop)
-        self.setEnabled(False)
+        # self.right_menu_widget = QWidget(self.central_widget)
+        # self.right_menu_widget.setFixedWidth(300)
+        # self.right_menu_layout = QVBoxLayout(self.right_menu_widget)
+        # self.right_menu_layout.setAlignment(Qt.AlignTop)
+        # self.setEnabled(False)
 
         self.initialization_view = InitializationView(self, cfg)
 
@@ -647,12 +649,66 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         board_type: BoardEnum,
         board_parameters: ParameterizedClass,
         initial_intrinsics: CameraModel,
+        cfg
     ):
         self.operation_mode = mode
         self.data_source = data_source
         self.board_type = board_type
         self.board_parameters = board_parameters
         self.current_camera_model = initial_intrinsics
+
+        # if a new parameter file was selected neleemnts are created with those parameters
+        self.cfg = cfg
+
+        self.data_collector = DataCollector(self.cfg["data_collector"])
+        self.calibrator_dict: Dict[CalibratorEnum, Calibrator] = {}
+
+        # data_coll_params = self.data_collector.parameters_value()
+        # board_params = self.board_parameters.parameters_value()
+        # detector_params = self.detector.parameters_value()
+        # calibrator_type = self.calibrator_type_combobox.currentData()
+        for calibrator_type in CalibratorEnum:
+            calibrator_cfg = defaultdict()
+
+            if (
+                "calibrator_type" in self.cfg
+                and calibrator_type.value["name"] == self.cfg["calibrator_type"]
+            ):
+                calibrator_cfg = self.cfg["calibration_parameters"]
+
+            calibrator = make_calibrator(calibrator_type, lock=self.lock, cfg=calibrator_cfg)
+            self.calibrator_dict[calibrator_type] = calibrator
+
+            calibrator.moveToThread(self.calibration_thread)
+            calibrator.calibration_results_signal.connect(self.process_calibration_results)
+            calibrator.evaluation_results_signal.connect(self.process_evaluation_results)
+            calibrator.partial_calibration_results_signal.connect(
+                self.process_partial_calibration_result
+            )
+        
+        # Qt logic
+        self.should_process_image.connect(self.process_data)
+        self.produced_data_signal.connect(self.process_new_data)
+        self.consumed_data_signal.connect(self.on_consumed)
+
+        self.central_widget = QWidget(self)
+        self.setCentralWidget(self.central_widget)
+        self.layout = QHBoxLayout(self.central_widget)
+
+        # Image View
+        self.make_image_view()
+
+        # Menu Widgets
+        self.left_menu_widget = QWidget(self.central_widget)
+        self.left_menu_widget.setFixedWidth(300)
+        self.left_menu_layout = QVBoxLayout(self.left_menu_widget)
+        self.left_menu_layout.setAlignment(Qt.AlignTop)
+
+        self.right_menu_widget = QWidget(self.central_widget)
+        self.right_menu_widget.setFixedWidth(300)
+        self.right_menu_layout = QVBoxLayout(self.right_menu_widget)
+        self.right_menu_layout.setAlignment(Qt.AlignTop)
+        self.setEnabled(False)
 
         # Creating the UI elements after selecting CALIBRATION or EVALUATION
         # Mode group
@@ -1145,9 +1201,15 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.estimated_fps = 0.9 * self.estimated_fps + 0.1 * current_fps
         self.last_processed_stamp = current_time
         detection_time = current_time - self.detection_request_time
-        self.setWindowTitle(
-            f"Camera intrinsics calibrator ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
-        )
+        # self.setWindowTitle(
+        #     f"Camera intrinsics calibrator ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
+        # )
+        if self.operation_mode == OperationMode.CALIBRATION:
+            self.setWindowTitle(f"Camera intrinsics calibrator ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
+            )
+        if self.operation_mode == OperationMode.EVALUATION:
+            self.setWindowTitle(f"Camera intrinsics Evaluation Mode ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
+            )
 
         self.image_view.update()
         self.graphics_view.update()

@@ -14,7 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import logging
+import yaml
+from collections import defaultdict
 from PySide2.QtCore import Signal
 from PySide2.QtWidgets import QComboBox
 from PySide2.QtWidgets import QFileDialog
@@ -74,6 +76,38 @@ class InitializationView(QWidget):
         source_layout = QVBoxLayout()
         source_layout.addWidget(self.data_source_combobox)
         self.source_group.setLayout(source_layout)
+
+        self.params_combobox = QComboBox()
+        self.params_combobox.addItem("General", 0)
+        self.params_combobox.addItem("C1", 1)
+        self.params_combobox.addItem("C2", 2)
+        self.params_combobox.addItem("Load File", 3)
+
+        def on_params_combo_box_changed(index):
+            if self.params_combobox.currentText() == "Load File":
+                file_name, _ = QFileDialog.getOpenFileName(
+                    self,
+                    "Open File",
+                    "",
+                    "All Files (*.*);;Text Files (*.yaml)"
+                )
+                if file_name:
+                    print(f"Selected file: {file_name}")
+                cfg = {}
+                try:
+                    with open(file_name, "r") as stream:
+                        cfg = yaml.safe_load(stream)
+                        self.cfg = defaultdict(dict, cfg)
+                except Exception as e:
+                    logging.error(f"Could not load the parameters from the YAML file ({e})")
+
+        self.params_combobox.currentIndexChanged.connect(on_params_combo_box_changed)
+
+        self.params_group = QGroupBox("Parameters Profile")
+        self.params_group.setFlat(True)
+        params_layout = QVBoxLayout()
+        params_layout.addWidget(self.params_combobox)
+        self.params_group.setLayout(params_layout)
 
         # Board
         self.board_group = QGroupBox("Board options")
@@ -152,6 +186,7 @@ class InitializationView(QWidget):
         self.layout.addWidget(self.source_group)
         self.layout.addWidget(self.board_group)
         self.layout.addWidget(self.mode_group)
+        self.layout.addWidget(self.params_group)
         self.layout.addWidget(self.initial_intrinsics_group)
         self.layout.addWidget(self.start_button)
 
@@ -174,6 +209,7 @@ class InitializationView(QWidget):
                 board_type,
                 self.board_parameters_dict[board_type],
                 self.initial_intrinsics,
+                self.cfg
             )
             self.close()
 
