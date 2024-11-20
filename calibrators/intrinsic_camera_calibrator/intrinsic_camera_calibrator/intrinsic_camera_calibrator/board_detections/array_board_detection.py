@@ -65,8 +65,10 @@ class ArrayBoardDetection(BoardDetection):
             squared_distance = np.abs(np.power(np.linalg.norm(p), 2) - np.power(np.dot(p, p2), 2))
             return squared_distance
 
-        if self._cached_linear_error_rows_rms is not None and \
-            self._cached_linear_error_cols_rms is not None:
+        if (
+            self._cached_linear_error_rows_rms is not None
+            and self._cached_linear_error_cols_rms is not None
+        ):
             return self._cached_linear_error_rows_rms, self._cached_linear_error_cols_rms
 
         error_rows = 0
@@ -103,8 +105,12 @@ class ArrayBoardDetection(BoardDetection):
         self._cached_linear_error_cols_rms = np.sqrt(error_cols / (self.cols * (self.rows - 2)))
         pct_err_cols = pct_err_cols / (self.cols * (self.rows - 2))
 
-        return self._cached_linear_error_rows_rms, self._cached_linear_error_cols_rms, \
-                pct_err_rows, pct_err_cols
+        return (
+            self._cached_linear_error_rows_rms,
+            self._cached_linear_error_cols_rms,
+            pct_err_rows,
+            pct_err_cols,
+        )
 
     def get_flattened_cell_sizes(self):
         if self._cached_flattened_cell_sizes is not None:
@@ -122,13 +128,13 @@ class ArrayBoardDetection(BoardDetection):
 
         self._cached_flattened_cell_sizes = cell_sizes.flatten()
         return self._cached_flattened_cell_sizes
-    
+
     def get_aspect_ratio_pattern(self) -> float:
-        """Get aspect ratio using the calibration pattern, wich should be squared."""
+        """Get aspect ratio using the calibration pattern, which should be squared."""
         tilt, pan = self.get_rotation_angles()
         acceptance_angle = 10
 
-        # dont update if we the detection has big angles, calculation will not be accurate  
+        # dont update if we the detection has big angles, calculation will not be accurate
         if np.abs(tilt) > acceptance_angle or np.abs(pan) > acceptance_angle:
             return 0.0
         # Calculate distances between adjacent corners
@@ -137,13 +143,12 @@ class ArrayBoardDetection(BoardDetection):
         for j in range(self.rows - 1):
             for i in range(self.cols - 1):
                 p = self.image_points[j, i]
-                pcol = self.image_points[j + 1, i]
-                prow = self.image_points[j, i + 1]
-                horizontal_distance = np.linalg.norm(p - prow)
-                vertical_distance = np.linalg.norm(p - pcol)
+                point_col = self.image_points[j + 1, i]
+                point_row = self.image_points[j, i + 1]
+                horizontal_distance = np.linalg.norm(p - point_row)
+                vertical_distance = np.linalg.norm(p - point_col)
                 aspect_ratio = aspect_ratio + (horizontal_distance / vertical_distance)
                 count += 1
-        aspect_ratio = aspect_ratio / ((self.rows - 1) * (self.cols - 1)) 
+        aspect_ratio = aspect_ratio / ((self.rows - 1) * (self.cols - 1))
 
         return aspect_ratio
-

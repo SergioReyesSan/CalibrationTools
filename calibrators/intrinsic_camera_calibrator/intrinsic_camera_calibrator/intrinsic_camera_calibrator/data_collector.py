@@ -364,7 +364,7 @@ class DataCollector(ParameterizedClass):
         return self.training_heatmap
 
     def get_linearity_heatmap(self) -> np.array:
-        """Return the linearity map to evaluate the recitification error."""
+        """Return the linearity map to evaluate the image rectification."""
         return self.linearity_heatmap
 
     def get_evaluation_occupancy_heatmap(self) -> np.array:
@@ -407,43 +407,45 @@ class DataCollector(ParameterizedClass):
 
     def update_linearity_heatmap(self, heatmap: np.array, detection: BoardDetection) -> float:
         """Update a heatmap with a single detection's image points."""
+
         def squared_error(p, p1, p2):
             p = p - p1
             p2 = p2 - p1
             p2 /= np.linalg.norm(p2)
             squared_distance = np.abs(np.power(np.linalg.norm(p), 2) - np.power(np.dot(p, p2), 2))
             return squared_distance
+
         image_points = detection.get_ordered_image_points()
         max_pct_error_tolerance = 0.04
 
         for j in range(detection.rows):
             p1 = image_points[j][0]
             p2 = image_points[j][-1]
-            points_dist = np.linalg.norm(p2 -p1)
+            points_dist = np.linalg.norm(p2 - p1)
             for i in range(1, detection.cols - 1):
                 p = image_points[j][i]
                 dist_error = np.sqrt(squared_error(p, p1, p2))
-                if (dist_error/points_dist > max_pct_error_tolerance):
+                if dist_error / points_dist > max_pct_error_tolerance:
                     # if distance is too big most likely is a miss detection
                     dist_error = 0
                 x = int(heatmap.shape[1] * p[0] / detection.width)
                 y = int(heatmap.shape[0] * p[1] / detection.height)
-                if (heatmap[y, x] < dist_error):
+                if heatmap[y, x] < dist_error:
                     heatmap[y, x] = 1 * dist_error
 
         for j in range(detection.cols):
             p1 = image_points[0][j]
             p2 = image_points[-1][j]
-            points_dist = np.linalg.norm(p2 -p1)
+            points_dist = np.linalg.norm(p2 - p1)
             for i in range(1, detection.rows - 1):
                 p = image_points[i][j]
                 dist_error = np.sqrt(squared_error(p, p1, p2))
-                if (dist_error/points_dist > max_pct_error_tolerance):
+                if dist_error / points_dist > max_pct_error_tolerance:
                     # if distance is too big most likely is a miss detection
                     dist_error = 0
                 x = int(heatmap.shape[1] * p[0] / detection.width)
                 y = int(heatmap.shape[0] * p[1] / detection.height)
-                if (heatmap[y, x] < dist_error):
+                if heatmap[y, x] < dist_error:
                     heatmap[y, x] = 1 * dist_error
 
     def restart_linearity_heatmap(self):
@@ -592,7 +594,7 @@ class DataCollector(ParameterizedClass):
         mode: OperationMode = OperationMode.CALIBRATION,
     ) -> CollectionStatus:
         """Evaluate detections mad ein evaluation mode."""
-        # process wihtout filtering detections 
+        # process witout filtering detections
         self.update_linearity_heatmap(self.linearity_heatmap, detection)
 
     def get_skew_coverage(self):
@@ -603,7 +605,7 @@ class DataCollector(ParameterizedClass):
         # Create a unique set to store covered intervals
         covered_intervals = set()
         # range in radians ToDo: define the range
-        skew_range = np.array([0,1.04])
+        skew_range = np.array([0, 1.04])
 
         for detection in self.training_data.get_detections():
             if skew_range[0] <= detection.get_normalized_skew() < skew_range[1]:
@@ -611,7 +613,7 @@ class DataCollector(ParameterizedClass):
                 covered_intervals.add(interval_index)
 
         # Calculate the percentage of covered intervals
-        percentage_coverage = (len(covered_intervals) / num_intervals) # * 100
+        percentage_coverage = len(covered_intervals) / num_intervals  # * 100
 
         return percentage_coverage
 
@@ -627,7 +629,7 @@ class DataCollector(ParameterizedClass):
         # Create a set to store covered intervals
         covered_intervals = set()
         # range for board size ToDo: define the range
-        size_range = np.array([0.08,0.21])
+        size_range = np.array([0.08, 0.21])
 
         for detection in self.training_data.get_detections():
             if size_range[0] <= detection.get_normalized_size() < size_range[1]:
@@ -635,7 +637,7 @@ class DataCollector(ParameterizedClass):
                 covered_intervals.add(interval_index)
 
         # Calculate the percentage of covered intervals
-        percentage_coverage = (len(covered_intervals) / num_intervals) # * 100
+        percentage_coverage = len(covered_intervals) / num_intervals  # * 100
 
         return percentage_coverage
 
