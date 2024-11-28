@@ -39,6 +39,8 @@ from intrinsic_camera_calibrator.views.image_files_view import ImageFilesView
 from intrinsic_camera_calibrator.views.parameter_view import ParameterView
 from intrinsic_camera_calibrator.views.ros_bag_view import RosBagView
 from intrinsic_camera_calibrator.views.ros_topic_view import RosTopicView
+from ament_index_python.packages import get_package_share_directory
+import os
 
 
 class InitializationView(QWidget):
@@ -61,6 +63,11 @@ class InitializationView(QWidget):
             board_type: make_board_parameters(board_type, cfg=self.cfg["board_parameters"])
             for board_type in BoardEnum
         }
+
+        # Get the package share directory
+        package_share_dir = get_package_share_directory('intrinsic_camera_calibrator')
+        # Get the path to the config directory
+        config_dir = os.path.join(package_share_dir, 'config')
 
         self.layout = QVBoxLayout(self)
 
@@ -93,11 +100,22 @@ class InitializationView(QWidget):
                 )
                 if file_name:
                     print(f"Selected file: {file_name}")
+                    config_file_path = file_name
+            elif self.params_combobox.currentText() == "C1":
+                config_file_path = os.path.join(config_dir, 'c1_intrinsics_calibrator.yaml')
+            elif self.params_combobox.currentText() == "C2":
+                config_file_path = os.path.join(config_dir, 'c2_intrinsics_calibrator.yaml')
+            elif self.params_combobox.currentText() == "General":
+                config_file_path = os.path.join(config_dir, 'c2_intrinsics_calibrator.yaml')
+
+            if config_file_path:
                 cfg = {}
                 try:
-                    with open(file_name, "r") as stream:
+                    with open(config_file_path, "r") as stream:
                         cfg = yaml.safe_load(stream)
                         self.cfg = defaultdict(dict, cfg)
+                        self.update_board_type()
+                        print("successfully loaded")
                 except Exception as e:
                     logging.error(f"Could not load the parameters from the YAML file ({e})")
 
@@ -119,12 +137,7 @@ class InitializationView(QWidget):
         for board_type in BoardEnum:
             self.board_type_combobox.addItem(board_type.value["display"], board_type)
 
-        if self.cfg["board_type"] != "":
-            self.board_type_combobox.setCurrentIndex(
-                BoardEnum.from_name(self.cfg["board_type"]).get_id()
-            )
-        else:
-            self.board_type_combobox.setCurrentIndex(0)
+        self.update_board_type()
 
         def board_parameters_on_closed():
             self.setEnabled(True)
@@ -191,6 +204,19 @@ class InitializationView(QWidget):
         self.layout.addWidget(self.start_button)
 
         self.show()
+
+    def update_board_type(self):
+        if self.cfg["board_type"] != "":
+            self.board_type_combobox.setCurrentIndex(
+                BoardEnum.from_name(self.cfg["board_type"]).get_id()
+            )
+        else:
+            self.board_type_combobox.setCurrentIndex(0)
+
+        self.board_parameters_dict = {
+            board_type: make_board_parameters(board_type, cfg=self.cfg["board_parameters"])
+            for board_type in BoardEnum
+        }
 
     def on_start(self):
         """Start the calibration process after receiving the user settings."""

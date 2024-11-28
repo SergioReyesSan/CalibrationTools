@@ -120,55 +120,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.board_type = BoardEnum.CHESS_BOARD
         self.board_parameters: ParameterizedClass = None
         self.detector: BoardDetector = None
-        # self.data_collector = DataCollector(self.cfg["data_collector"])
-        # self.calibrator_dict: Dict[CalibratorEnum, Calibrator] = {}
 
         self.image_view_mode = ImageViewMode.SOURCE_UNRECTIFIED
         self.paused = False
         self.last_detection = None
-
-        # for calibrator_type in CalibratorEnum:
-        #     calibrator_cfg = defaultdict()
-
-        #     if (
-        #         "calibrator_type" in self.cfg
-        #         and calibrator_type.value["name"] == self.cfg["calibrator_type"]
-        #     ):
-        #         calibrator_cfg = self.cfg["calibration_parameters"]
-
-        #     calibrator = make_calibrator(calibrator_type, lock=self.lock, cfg=calibrator_cfg)
-        #     self.calibrator_dict[calibrator_type] = calibrator
-
-        #     calibrator.moveToThread(self.calibration_thread)
-        #     calibrator.calibration_results_signal.connect(self.process_calibration_results)
-        #     calibrator.evaluation_results_signal.connect(self.process_evaluation_results)
-        #     calibrator.partial_calibration_results_signal.connect(
-        #         self.process_partial_calibration_result
-        #     )
-
-        # # Qt logic
-        # self.should_process_image.connect(self.process_data)
-        # self.produced_data_signal.connect(self.process_new_data)
-        # self.consumed_data_signal.connect(self.on_consumed)
-
-        # self.central_widget = QWidget(self)
-        # self.setCentralWidget(self.central_widget)
-        # self.layout = QHBoxLayout(self.central_widget)
-
-        # # Image View
-        # self.make_image_view()
-
-        # # Menu Widgets
-        # self.left_menu_widget = QWidget(self.central_widget)
-        # self.left_menu_widget.setFixedWidth(300)
-        # self.left_menu_layout = QVBoxLayout(self.left_menu_widget)
-        # self.left_menu_layout.setAlignment(Qt.AlignTop)
-
-        # self.right_menu_widget = QWidget(self.central_widget)
-        # self.right_menu_widget.setFixedWidth(300)
-        # self.right_menu_layout = QVBoxLayout(self.right_menu_widget)
-        # self.right_menu_layout.setAlignment(Qt.AlignTop)
-        # self.setEnabled(False)
 
         self.initialization_view = InitializationView(self, cfg)
 
@@ -645,7 +600,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         board_type: BoardEnum,
         board_parameters: ParameterizedClass,
         initial_intrinsics: CameraModel,
-        cfg
+        cfg : dict,
     ):
         self.operation_mode = mode
         self.data_source = data_source
@@ -653,16 +608,12 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.board_parameters = board_parameters
         self.current_camera_model = initial_intrinsics
 
-        # if a new parameter file was selected neleemnts are created with those parameters
-        self.cfg = cfg
+        # if a new parameter file was selected new dictionary is created from those parameters
+        self.cfg = defaultdict(dict, cfg)
 
         self.data_collector = DataCollector(self.cfg["data_collector"])
         self.calibrator_dict: Dict[CalibratorEnum, Calibrator] = {}
 
-        # data_coll_params = self.data_collector.parameters_value()
-        # board_params = self.board_parameters.parameters_value()
-        # detector_params = self.detector.parameters_value()
-        # calibrator_type = self.calibrator_type_combobox.currentData()
         for calibrator_type in CalibratorEnum:
             calibrator_cfg = defaultdict()
 
@@ -917,6 +868,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         calib_params = self.calibrator_dict[calibrator_type].parameters_value()
         with open(filename, "w") as file:
             yaml.dump({"board_parameters": board_params}, file, default_flow_style=False)
+            yaml.dump({"board_type" : self.board_type.value["name"]}, file, default_flow_style=False)
             yaml.dump(
                 {"calibrator_type": calibrator_type.value["name"]}, file, default_flow_style=False
             )
@@ -1225,9 +1177,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.estimated_fps = 0.9 * self.estimated_fps + 0.1 * current_fps
         self.last_processed_stamp = current_time
         detection_time = current_time - self.detection_request_time
-        # self.setWindowTitle(
-        #     f"Camera intrinsics calibrator ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
-        # )
+
         if self.operation_mode == OperationMode.CALIBRATION:
             self.setWindowTitle(f"Camera intrinsics calibrator ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
             )

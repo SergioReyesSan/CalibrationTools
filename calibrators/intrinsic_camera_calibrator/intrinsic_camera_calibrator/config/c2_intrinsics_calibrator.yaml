@@ -24,7 +24,7 @@ calibration_parameters:
   viz_tilt_resolution: 15.0
   viz_max_tilt_deg: 45.0
   viz_z_cells: 12
-  radial_distortion_coefficients: 4
+  radial_distortion_coefficients: 5
 
 calibrator_type: opencv
 
