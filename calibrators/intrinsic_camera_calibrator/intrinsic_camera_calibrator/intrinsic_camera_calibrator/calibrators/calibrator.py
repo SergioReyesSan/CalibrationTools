@@ -35,7 +35,9 @@ from intrinsic_camera_calibrator.calibrators.utils import (
 )
 from intrinsic_camera_calibrator.calibrators.utils import add_detection
 from intrinsic_camera_calibrator.calibrators.utils import get_entropy
-from intrinsic_camera_calibrator.camera_model import CameraModel
+from intrinsic_camera_calibrator.camera_models.camera_model import CameraModel
+from intrinsic_camera_calibrator.camera_models.camera_model import CameraModelEnum
+from intrinsic_camera_calibrator.camera_models.camera_model_factory import make_camera_model
 from intrinsic_camera_calibrator.data_collector import DataCollector
 from intrinsic_camera_calibrator.parameter import Parameter
 from intrinsic_camera_calibrator.parameter import ParameterizedClass
@@ -121,6 +123,10 @@ class Calibrator(ParameterizedClass, QObject):
         self.calibration_request.connect(self._calibrate)
         self.evaluation_request.connect(self._evaluate)
         self.partial_calibration_request.connect(self._calibrate_fast)
+
+    def get_model_info(self) -> Tuple[Dict, CameraModelEnum]:
+        """Return the configuration of the camera model."""
+        raise NotImplementedError
 
     def _calibrate(self, data_collector: DataCollector):
         """
@@ -456,7 +462,10 @@ class Calibrator(ParameterizedClass, QObject):
                 detection.get_flattened_image_points() for detection in sampled_detections
             ]
 
-            model = CameraModel()
+            model_cfg, model_type = self.get_model_info()
+            model = make_camera_model(model_type)
+            model.update_config(**model_cfg)
+
             model.calibrate(
                 height=height,
                 width=width,

@@ -14,6 +14,7 @@
 
 #include <Eigen/Core>
 #include <ceres_intrinsic_camera_calibrator/ceres_camera_intrinsics_optimizer.hpp>
+#include <ceres_intrinsic_camera_calibrator/distortion_coefficients_residual.hpp>
 #include <ceres_intrinsic_camera_calibrator/reprojection_residual.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/core.hpp>
@@ -49,6 +50,11 @@ void CeresCameraIntrinsicsOptimizer::setRationalDistortionCoefficients(
   int rational_distortion_coefficients)
 {
   rational_distortion_coefficients_ = rational_distortion_coefficients;
+}
+
+void CeresCameraIntrinsicsOptimizer::setRegularizationWeight(double regularization_weight)
+{
+  regularization_weight_ = regularization_weight;
 }
 
 void CeresCameraIntrinsicsOptimizer::setVerbose(bool verbose) { verbose_ = verbose; }
@@ -354,6 +360,14 @@ void CeresCameraIntrinsicsOptimizer::solve()
         intrinsics_placeholder_.data(), pose_placeholder.data());
     }
   }
+
+  problem.AddResidualBlock(
+    DistortionCoefficientsResidual::createResidual(
+      radial_distortion_coefficients_, use_tangential_distortion_,
+      rational_distortion_coefficients_),
+    new ceres::ScaledLoss(
+      nullptr, regularization_weight_ * object_points_.size(), ceres::TAKE_OWNERSHIP),  // L2
+    intrinsics_placeholder_.data());
 
   double initial_cost = 0.0;
   std::vector<double> residuals;
