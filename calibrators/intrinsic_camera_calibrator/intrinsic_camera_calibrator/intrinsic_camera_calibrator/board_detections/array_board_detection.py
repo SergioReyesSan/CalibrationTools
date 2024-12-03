@@ -129,26 +129,3 @@ class ArrayBoardDetection(BoardDetection):
         self._cached_flattened_cell_sizes = cell_sizes.flatten()
         return self._cached_flattened_cell_sizes
 
-    def get_aspect_ratio_pattern(self) -> float:
-        """Get aspect ratio using the calibration pattern, which should be squared."""
-        tilt, pan = self.get_rotation_angles()
-        acceptance_angle = 10
-
-        # dont update if we the detection has big angles, calculation will not be accurate
-        if np.abs(tilt) > acceptance_angle or np.abs(pan) > acceptance_angle:
-            return 0.0
-        # Calculate distances between adjacent corners
-        aspect_ratio = 0
-        count = 0
-        for j in range(self.rows - 1):
-            for i in range(self.cols - 1):
-                p = self.image_points[j, i]
-                point_col = self.image_points[j + 1, i]
-                point_row = self.image_points[j, i + 1]
-                horizontal_distance = np.linalg.norm(p - point_row)
-                vertical_distance = np.linalg.norm(p - point_col)
-                aspect_ratio = aspect_ratio + (horizontal_distance / vertical_distance)
-                count += 1
-        aspect_ratio = aspect_ratio / ((self.rows - 1) * (self.cols - 1))
-
-        return aspect_ratio

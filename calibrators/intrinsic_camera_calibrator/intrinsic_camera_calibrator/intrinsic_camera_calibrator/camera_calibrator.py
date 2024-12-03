@@ -240,12 +240,39 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
         self.mode_options_group.setLayout(mode_options_layout)
 
+    def make_solver_group(self):
+        self.solver_group = QGroupBox("Solver selection")
+        self.solver_group.setFlat(True)
+        self.calibrator_type_combobox = QComboBox()
+        self.calibrator_type_combobox.setEnabled(True)
+
+        def on_calibrator_clicked():
+            self.current_calibrator_type = self.calibrator_type_combobox.currentData()
+       
+        for calibrator_type in CalibratorEnum:
+            self.calibrator_type_combobox.addItem(calibrator_type.value["display"], calibrator_type)
+
+        if "calibrator_type" in self.cfg:
+            try:
+                self.calibrator_type_combobox.setCurrentIndex(
+                    CalibratorEnum.from_name(self.cfg["calibrator_type"]).get_id()
+                )
+            except Exception as e:
+                logging.error(f"Invalid calibration_type: {e}")
+        else:
+            self.calibrator_type_combobox.setCurrentIndex(0)
+
+        self.calibrator_type_combobox.currentIndexChanged.connect(on_calibrator_clicked)
+        self.current_calibrator_type = self.calibrator_type_combobox.currentData()
+        
+        solver_layout = QVBoxLayout()
+        solver_layout.setAlignment(Qt.AlignTop)
+        solver_layout.addWidget(self.calibrator_type_combobox)
+        self.solver_group.setLayout(solver_layout)
+
     def make_calibration_group(self):
         self.calibration_group = QGroupBox("Calibration control")
         self.calibration_group.setFlat(True)
-
-        self.calibrator_type_combobox = QComboBox()
-        self.calibrator_type_combobox.setEnabled(True)
 
         self.calibration_parameters_button = QPushButton("Calibration parameters")
         self.calibration_button = QPushButton("Calibrate")
@@ -310,9 +337,6 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
             self.calibration_status_label.setText("Calibration status: evaluating")
 
-        def on_calibrator_clicked():
-            self.current_calibrator_type = self.calibrator_type_combobox.currentData()
-
         self.calibration_parameters_button.clicked.connect(on_parameters_button_clicked)
 
         self.calibration_button.clicked.connect(on_calibration_clicked)
@@ -324,24 +348,8 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.save_button.clicked.connect(self.on_save_clicked)
         self.save_button.setEnabled(False)
 
-        self.calibrator_type_combobox.currentIndexChanged.connect(on_calibrator_clicked)
-
-        for calibrator_type in CalibratorEnum:
-            self.calibrator_type_combobox.addItem(calibrator_type.value["display"], calibrator_type)
-
-        if "calibrator_type" in self.cfg:
-            try:
-                self.calibrator_type_combobox.setCurrentIndex(
-                    CalibratorEnum.from_name(self.cfg["calibrator_type"]).get_id()
-                )
-            except Exception as e:
-                logging.error(f"Invalid calibration_type: {e}")
-        else:
-            self.calibrator_type_combobox.setCurrentIndex(0)
-
         calibration_layout = QVBoxLayout()
         calibration_layout.setAlignment(Qt.AlignTop)
-        calibration_layout.addWidget(self.calibrator_type_combobox)
         calibration_layout.addWidget(self.calibration_parameters_button)
         calibration_layout.addWidget(self.calibration_button)
         calibration_layout.addWidget(self.evaluation_button)
@@ -666,13 +674,15 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         # Mode group
         self.make_mode_group()
 
+        # Create solver selector
+        self.make_solver_group()
+
         # Calibration group
         if self.operation_mode == OperationMode.CALIBRATION:
             self.make_calibration_group()
 
         # Detector group
-        if self.operation_mode == OperationMode.CALIBRATION:
-            self.make_detector_group()
+        self.make_detector_group()
 
         # Detections group
         self.make_detection_group()
@@ -685,9 +695,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.make_visualization_group()
 
         # self.menu_layout.addWidget(label)
+        self.left_menu_layout.addWidget(self.solver_group)
         if self.operation_mode == OperationMode.CALIBRATION:
             self.left_menu_layout.addWidget(self.calibration_group)
-            self.left_menu_layout.addWidget(self.detector_options_group)
+        self.left_menu_layout.addWidget(self.detector_options_group)
         self.left_menu_layout.addWidget(self.raw_detection_results_group)
         self.left_menu_layout.addWidget(self.single_shot_detection_results_group)
 
@@ -1066,9 +1077,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.raw_linear_error_cols_rms_label.setText(
                 f"Linear error cols rms:  {err_rms_cols:.2f} px"  # noqa E231
             )
-            # self.aspect_ratio_label.setText(
-            #    f"Aspect Ratio:  {detection.get_aspect_ratio_pattern():.2f} px"  # noqa E231
-            # )
+            self.aspect_ratio_label.setText(
+               f"Aspect Ratio:  {detection.get_aspect_ratio_pattern(camera_model):.2f} px"  # noqa E231
+            )
             self.rough_tilt_label.setText(
                 f"Rough tilt: {detection.get_tilt(camera_model):.2f} degrees"  # noqa E231
             )
@@ -1115,7 +1126,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 err_rms_cols,
                 pct_err_rows,
                 pct_err_cols,
-                0.0,  # detection.get_aspect_ratio_pattern(),
+                detection.get_aspect_ratio_pattern(camera_model),
                 pan,
                 tilt,
                 self.indicators_alpha_spinbox.value(),

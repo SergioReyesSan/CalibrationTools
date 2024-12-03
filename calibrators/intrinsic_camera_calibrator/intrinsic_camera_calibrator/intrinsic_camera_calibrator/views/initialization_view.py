@@ -88,7 +88,8 @@ class InitializationView(QWidget):
         self.params_combobox.addItem("General", 0)
         self.params_combobox.addItem("C1", 1)
         self.params_combobox.addItem("C2", 2)
-        self.params_combobox.addItem("Load File", 3)
+        self.params_combobox.addItem("Ceres Calib", 3)
+        self.params_combobox.addItem("Load File", 4)
 
         def on_params_combo_box_changed(index):
             if self.params_combobox.currentText() == "Load File":
@@ -105,8 +106,10 @@ class InitializationView(QWidget):
                 config_file_path = os.path.join(config_dir, 'c1_intrinsics_calibrator.yaml')
             elif self.params_combobox.currentText() == "C2":
                 config_file_path = os.path.join(config_dir, 'c2_intrinsics_calibrator.yaml')
+            elif self.params_combobox.currentText() == "Ceres Calib":
+                config_file_path = os.path.join(config_dir, 'intrinsics_calibrator_ceres.yaml')
             elif self.params_combobox.currentText() == "General":
-                config_file_path = os.path.join(config_dir, 'c2_intrinsics_calibrator.yaml')
+                config_file_path = os.path.join(config_dir, 'intrinsics_calibrator.yaml')
 
             if config_file_path:
                 cfg = {}
