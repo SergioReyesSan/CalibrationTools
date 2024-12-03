@@ -53,3 +53,11 @@ data_collector:
   rotation_heatmap_angle_res: 10
   point_2d_hist_bins: 20
   point_3d_hist_bins: 20
+
+chess_board_detector:
+  adaptive_thresh: false
+  normalize_image: false
+  fast_check: false
+  resized_detection: false 
+  resized_max_resolution: 1000
+  sub_pixel_refinement: true

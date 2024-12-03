@@ -13,7 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import debugpy
+debugpy.listen(5678)
+debugpy.wait_for_client()  # blocks execution until client is attached
 from collections import defaultdict
 import copy
 import logging
