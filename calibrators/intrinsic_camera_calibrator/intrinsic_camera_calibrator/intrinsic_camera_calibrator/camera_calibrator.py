@@ -1275,6 +1275,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         """Attempt to request the detector to process an image. However, if it there is an image being processed, does not enqueue them indefinitely. Instead, only leave the last one."""
         # if was not found the pattern skip some frames
         if self.skip_next_img > 0:
+            print("skipping frame")
             self.skip_next_img -= 1
             self.consumed_data_signal.emit()
             return

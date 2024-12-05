@@ -38,6 +38,9 @@ class ChessBoardDetector(BoardDetector):
         self.roi = None
         self.lost_frames = 0
         self.max_lost_frames = 3
+        self.temp_resize_mode = False
+        self.max_frames_resize_mode = 7
+        self.count_frames_resize_mode = 0
 
     def detect(self, img: np.array, stamp: float):
         st_time = time.time()
@@ -74,7 +77,8 @@ class ChessBoardDetector(BoardDetector):
         h, w = img.shape[0:2]
         grayscale = to_grayscale(img)
 
-        if not resized_detection or max(h, w) <= resized_max_resolution:
+        if not resized_detection and not self.temp_resize_mode or max(h, w) <= resized_max_resolution:
+            print("Detecting in full mode \n")
             if self.roi is None or self.lost_frames >= self.max_lost_frames:
                 ret, corners = find_chessboard(img)
                 if ret:
@@ -83,6 +87,7 @@ class ChessBoardDetector(BoardDetector):
                 else:
                     self.lost_frames += 1
                     self.detection_results_signal.emit(img, None, stamp)
+                    self.temp_resize_mode = True # changing mode to resized mode
                     return
             else:
                 roi_frame = img[self.roi[1]:self.roi[3], self.roi[0]:self.roi[2]]
@@ -100,6 +105,14 @@ class ChessBoardDetector(BoardDetector):
                 cv2.rectangle(img, (self.roi[0], self.roi[1]), (self.roi[2], self.roi[3]), (0, 255, 0), 2)
 
         else:
+            # forcing resize mode if we are not in for a few frames
+            if self.temp_resize_mode:
+                print("Detecting in resize mode \n")
+                self.count_frames_resize_mode += 1
+                if self.count_frames_resize_mode > self.max_frames_resize_mode:
+                    self.count_frames_resize_mode = 0
+                    self.temp_resize_mode = False # again try to detect in full mode
+
             # Find the resized dimensions
             ratio = float(w) / float(h)
 
