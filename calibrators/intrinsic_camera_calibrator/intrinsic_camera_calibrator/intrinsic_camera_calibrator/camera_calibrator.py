@@ -949,7 +949,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     def process_detection_results(self, img: np.array, detection: BoardDetection, img_stamp: float):
         """Process the results from an object detection."""
         # Signal that the detector is free
-        print("elapsedtime_Debug: ", time.time()- self.time_for_debug)
+        print("elapsedtime_Debug: ", time.time()- self.time_for_debug, flush=True)
         self.consumed_data_signal.emit()
         self.time_for_debug = time.time()
 
@@ -1015,7 +1015,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                     mode=self.operation_mode,
                 )
                 # filter_result = CollectionStatus.REJECTED
-                print("dat_coll : ", time.time()-dat_coll_start)
+                print("dat_coll : ", time.time()-dat_coll_start, flush=True)
             else:
                 filter_result = CollectionStatus.NOT_EVALUATED
 
@@ -1059,7 +1059,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.image_view.set_grid_size_pixels(detection.get_flattened_cell_sizes().mean())
             repr_err_time = time.time()
             reprojection_errors = detection.get_reprojection_errors(camera_model)
-            print("repr_err_time: ", time.time() - repr_err_time)
+            print("repr_err_time: ", time.time() - repr_err_time, flush=True)
             reprojection_errors_norm = np.linalg.norm(reprojection_errors, axis=-1)
             reprojection_error_max = reprojection_errors_norm.max()
             reprojection_error_mean = reprojection_errors_norm.mean()
@@ -1275,7 +1275,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         """Attempt to request the detector to process an image. However, if it there is an image being processed, does not enqueue them indefinitely. Instead, only leave the last one."""
         # if was not found the pattern skip some frames
         if self.skip_next_img > 0:
-            print("skipping frame")
+            print("skipping frame", flush=True)
             self.skip_next_img -= 1
             self.consumed_data_signal.emit()
             return
