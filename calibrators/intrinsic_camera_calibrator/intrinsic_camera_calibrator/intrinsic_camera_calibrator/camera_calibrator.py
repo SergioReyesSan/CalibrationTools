@@ -123,6 +123,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.image_view_mode = ImageViewMode.SOURCE_UNRECTIFIED
         self.paused = False
         self.last_detection = None
+        self.skip_next_img = 3
+
+        self.time_for_debug = time.time()
 
         self.initialization_view = InitializationView(self, cfg)
 
@@ -946,7 +949,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     def process_detection_results(self, img: np.array, detection: BoardDetection, img_stamp: float):
         """Process the results from an object detection."""
         # Signal that the detector is free
+        print("elapsedtime_Debug: ", time.time()- self.time_for_debug)
         self.consumed_data_signal.emit()
+        self.time_for_debug = time.time()
 
         if img is None:
             self.pending_detection_result = False
@@ -992,6 +997,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 self.indicators_alpha_spinbox.value(),
                 False,
             )
+            self.skip_next_img = 3 # skips the next images if there are no detections
 
         else:
             camera_model_cfg, camera_model_type = self.calibrator_dict[
@@ -1001,12 +1007,15 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             camera_model.update_config(**camera_model_cfg)
 
             if self.image_view_type_combobox.currentData() == ImageViewMode.SOURCE_UNRECTIFIED:
+                dat_coll_start = time.time()
                 filter_result = self.data_collector.process_detection(
                     image=img,
                     detection=detection,
                     camera_model=camera_model,
                     mode=self.operation_mode,
                 )
+                # filter_result = CollectionStatus.REJECTED
+                print("dat_coll : ", time.time()-dat_coll_start)
             else:
                 filter_result = CollectionStatus.NOT_EVALUATED
 
@@ -1048,8 +1057,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             ordered_image_points = detection.get_ordered_image_points()
             self.image_view.set_detection_ordered_points(ordered_image_points)
             self.image_view.set_grid_size_pixels(detection.get_flattened_cell_sizes().mean())
-
+            repr_err_time = time.time()
             reprojection_errors = detection.get_reprojection_errors(camera_model)
+            print("repr_err_time: ", time.time() - repr_err_time)
             reprojection_errors_norm = np.linalg.norm(reprojection_errors, axis=-1)
             reprojection_error_max = reprojection_errors_norm.max()
             reprojection_error_mean = reprojection_errors_norm.mean()
@@ -1065,7 +1075,6 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             pose_rotation, pose_translation = detection.get_pose(camera_model)
             pose_translation = pose_translation.flatten()
             rough_angles = detection.get_rotation_angles(camera_model)
-
             self.raw_detection_label.setText("Detected: True")
             err_rms_rows, err_rms_cols, pct_err_rows, pct_err_cols = (
                 detection.get_linear_error_rms()
@@ -1264,6 +1273,11 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
     def process_new_data(self):
         """Attempt to request the detector to process an image. However, if it there is an image being processed, does not enqueue them indefinitely. Instead, only leave the last one."""
+        # if was not found the pattern skip some frames
+        if self.skip_next_img > 0:
+            self.skip_next_img -= 1
+            self.consumed_data_signal.emit()
+            return
         if self.paused:
             return
 
