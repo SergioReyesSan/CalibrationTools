@@ -69,7 +69,7 @@ class ChessBoardDetector(BoardDetector):
         h, w = img.shape[0:2]
         grayscale = to_grayscale(img)
 
-        if not resized_detection and not self.temp_resize_mode or max(h, w) <= resized_max_resolution:
+        if not resized_detection or max(h, w) <= resized_max_resolution:
             print("Detecting in full mode ", flush=True)
             if self.roi is None or self.lost_frames >= self.max_lost_frames:
                 (ok, corners) = cv2.findChessboardCorners(grayscale, (cols, rows), flags=flags)
