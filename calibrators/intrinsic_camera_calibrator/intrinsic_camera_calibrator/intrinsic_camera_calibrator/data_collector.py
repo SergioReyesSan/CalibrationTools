@@ -610,12 +610,18 @@ class DataCollector(ParameterizedClass):
         covered_intervals = set()
 
         for detection in self.training_data.get_detections():
-            if DataCollector.skew_range[0] <= detection.get_normalized_skew() < DataCollector.skew_range[1]:
+            if (
+                DataCollector.skew_range[0]
+                <= detection.get_normalized_skew()
+                < DataCollector.skew_range[1]
+            ):
                 interval_index = int(detection.get_normalized_skew() / interval_size)
                 covered_intervals.add(interval_index)
 
         # Calculate the percentage of covered intervals
-        percentage_coverage = len(covered_intervals) / DataCollector.num_intervals_skew_angle  # * 100
+        percentage_coverage = (
+            len(covered_intervals) / DataCollector.num_intervals_skew_angle
+        )  # * 100
 
         return percentage_coverage
 
@@ -627,12 +633,17 @@ class DataCollector(ParameterizedClass):
         covered_intervals = set()
 
         for detection in self.training_data.get_detections():
-            if DataCollector.size_range[0] <= detection.get_normalized_size() < DataCollector.size_range[1]:
+            if (
+                DataCollector.size_range[0]
+                <= detection.get_normalized_size()
+                < DataCollector.size_range[1]
+            ):
                 interval_index = int(detection.get_normalized_size() / interval_size)
                 covered_intervals.add(interval_index)
 
         # Calculate the percentage of covered intervals
-        percentage_coverage = len(covered_intervals) / DataCollector.num_intervals_board_size  # * 100
+        percentage_coverage = (
+            len(covered_intervals) / DataCollector.num_intervals_board_size
+        )  # * 100
 
         return percentage_coverage
-

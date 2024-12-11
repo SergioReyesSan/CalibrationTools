@@ -976,19 +976,19 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.single_shot_reprojection_error_rms_label.setText("Reprojection error (rms):")
             board_speed = None
             self.image_view.set_draw_indicators(
-                board_speed = board_speed,
-                max_allowed_board_speed = self.data_collector.max_allowed_pixel_speed.value,
-                skew_percentage = self.data_collector.get_skew_percentage(),
-                board_size_percentage = self.data_collector.get_size_percentage(),
-                rows_linear_error = 0.0,
-                cols_linear_error = 0.0,  # rows cols linear error
-                pct_err_rows = 0.0,
-                pct_err_cols = 0.0,  # rows cols percentage linear error
-                aspect_ratio = 0.0,  # aspect ratio
-                pan = 0.0,
-                tilt = 0.0,
-                alpha_indicators = self.indicators_alpha_spinbox.value(),
-                value = False,
+                board_speed=board_speed,
+                max_allowed_board_speed=self.data_collector.max_allowed_pixel_speed.value,
+                skew_percentage=self.data_collector.get_skew_percentage(),
+                board_size_percentage=self.data_collector.get_size_percentage(),
+                rows_linear_error=0.0,
+                cols_linear_error=0.0,  # rows cols linear error
+                pct_err_rows=0.0,
+                pct_err_cols=0.0,  # rows cols percentage linear error
+                aspect_ratio=0.0,  # aspect ratio
+                pan=0.0,
+                tilt=0.0,
+                alpha_indicators=self.indicators_alpha_spinbox.value(),
+                value=False,
             )
 
         else:
@@ -1115,19 +1115,19 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.last_detection = detection
             pan, tilt = rough_angles
             self.image_view.set_draw_indicators(
-                board_speed = board_speed,
-                max_allowed_board_speed = self.data_collector.max_allowed_pixel_speed.value,
-                skew_percentage = self.data_collector.get_skew_percentage(),
-                board_size_percentage = self.data_collector.get_size_percentage(),
-                rows_linear_error = err_rms_rows,
-                cols_linear_error = err_rms_cols,
-                pct_err_rows = pct_err_rows,
-                pct_err_cols = pct_err_cols,
-                aspect_ratio = detection.get_aspect_ratio_pattern(camera_model),
-                pan = pan,
-                tilt = tilt,
-                alpha_indicators = self.indicators_alpha_spinbox.value(),
-                value = self.draw_indicators_checkbox.isChecked(),
+                board_speed=board_speed,
+                max_allowed_board_speed=self.data_collector.max_allowed_pixel_speed.value,
+                skew_percentage=self.data_collector.get_skew_percentage(),
+                board_size_percentage=self.data_collector.get_size_percentage(),
+                rows_linear_error=err_rms_rows,
+                cols_linear_error=err_rms_cols,
+                pct_err_rows=pct_err_rows,
+                pct_err_cols=pct_err_cols,
+                aspect_ratio=detection.get_aspect_ratio_pattern(camera_model),
+                pan=pan,
+                tilt=tilt,
+                alpha_indicators=self.indicators_alpha_spinbox.value(),
+                value=self.draw_indicators_checkbox.isChecked(),
             )
 
         # Draw training / evaluation points

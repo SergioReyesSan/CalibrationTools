@@ -90,9 +90,11 @@ class InitializationView(QWidget):
 
         # Add all YAML files from the config directory
         for file in os.listdir(config_dir):
-            if file.endswith('.yaml'):# and file != 'intrinsics_calibrator.yaml':
+            if file.endswith(".yaml"):  # and file != 'intrinsics_calibrator.yaml':
                 file_path = os.path.join(config_dir, file)
-                self.params_combobox.addItem(file.split('.')[0].replace('_', ' ').title(), file_path)
+                self.params_combobox.addItem(
+                    file.split(".")[0].replace("_", " ").title(), file_path
+                )
         # Add "Load File" option at the end
         self.params_combobox.addItem("Load File", None)
 
