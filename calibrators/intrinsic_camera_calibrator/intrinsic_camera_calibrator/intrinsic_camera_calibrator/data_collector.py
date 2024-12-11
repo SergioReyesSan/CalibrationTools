@@ -197,6 +197,11 @@ class DataCollector(ParameterizedClass):
     new_evaluation_sample = Signal()
     new_sample = Signal()
 
+    num_intervals_board_size = 20
+    num_intervals_skew_angle = 50
+    size_range = np.array([0.08, 0.21])
+    skew_range = np.array([0, 1.04])
+
     def __init__(self, cfg: dict = dict(), **kwargs):  # noqa C408
         super().__init__(cfg=cfg, **kwargs)
 
@@ -593,54 +598,41 @@ class DataCollector(ParameterizedClass):
         camera_model: Optional[CameraModel] = None,
         mode: OperationMode = OperationMode.CALIBRATION,
     ) -> CollectionStatus:
-        """Evaluate detections mad ein evaluation mode."""
+        """Evaluate detections made in evaluation mode."""
         # process witout filtering detections
         self.update_linearity_heatmap(self.linearity_heatmap, detection)
 
-    def get_skew_coverage(self):
+    def get_skew_percentage(self):
         """Get skew percentage covered from a defined range for the indicators."""
-        # Define the number of intervals
-        num_intervals = 50
-        interval_size = 1 / num_intervals
+        # Define intervals
+        interval_size = 1 / DataCollector.num_intervals_skew_angle
         # Create a unique set to store covered intervals
         covered_intervals = set()
-        # range in radians ToDo: define the range
-        skew_range = np.array([0, 1.04])
 
         for detection in self.training_data.get_detections():
-            if skew_range[0] <= detection.get_normalized_skew() < skew_range[1]:
+            if DataCollector.skew_range[0] <= detection.get_normalized_skew() < DataCollector.skew_range[1]:
                 interval_index = int(detection.get_normalized_skew() / interval_size)
                 covered_intervals.add(interval_index)
 
         # Calculate the percentage of covered intervals
-        percentage_coverage = len(covered_intervals) / num_intervals  # * 100
-
-        return percentage_coverage
-
-    def get_skew_percentage(self):
-        """Get skew precentage with more useful name ToDo Refactor."""
-        return self.get_skew_coverage()
-
-    def get_size_coverage(self):
-        """Get board size percentage covered from a defined range for the indicators."""
-        # Define the number of intervals
-        num_intervals = 20
-        interval_size = 1 / num_intervals
-        # Create a set to store covered intervals
-        covered_intervals = set()
-        # range for board size ToDo: define the range
-        size_range = np.array([0.08, 0.21])
-
-        for detection in self.training_data.get_detections():
-            if size_range[0] <= detection.get_normalized_size() < size_range[1]:
-                interval_index = int(detection.get_normalized_size() / interval_size)
-                covered_intervals.add(interval_index)
-
-        # Calculate the percentage of covered intervals
-        percentage_coverage = len(covered_intervals) / num_intervals  # * 100
+        percentage_coverage = len(covered_intervals) / DataCollector.num_intervals_skew_angle  # * 100
 
         return percentage_coverage
 
     def get_size_percentage(self):
-        """Get size precentage with more useful name ToDo Refactor."""
-        return self.get_size_coverage()
+        """Get board size percentage covered from a defined range for the indicators."""
+        # Define intervals
+        interval_size = 1 / DataCollector.num_intervals_board_size
+        # Create a set to store covered intervals
+        covered_intervals = set()
+
+        for detection in self.training_data.get_detections():
+            if DataCollector.size_range[0] <= detection.get_normalized_size() < DataCollector.size_range[1]:
+                interval_index = int(detection.get_normalized_size() / interval_size)
+                covered_intervals.add(interval_index)
+
+        # Calculate the percentage of covered intervals
+        percentage_coverage = len(covered_intervals) / DataCollector.num_intervals_board_size  # * 100
+
+        return percentage_coverage
+

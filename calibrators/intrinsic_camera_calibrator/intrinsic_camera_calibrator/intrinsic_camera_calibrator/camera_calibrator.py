@@ -540,7 +540,6 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.should_process_image.emit()
 
         def on_restart_linearity_heatmap_clicked():
-            print("restart_lin_heatmap", flush=True)
             self.data_collector.restart_linearity_heatmap()
 
         self.restart_linearity_heatmap_button = QPushButton("Clear heatmap linearity")
@@ -748,7 +747,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.training_sample_slider.setEnabled(False)
             self.evaluation_sample_slider.setEnabled(False)
             self.image_view_type_combobox.clear()
-            # Order of of how items are added to the combobox matters,
+            # Order when adding items to the combobox, matters,
             # default index is 0, so rectified image is added first to be default view
             self.image_view_type_combobox.addItem(
                 ImageViewMode.SOURCE_RECTIFIED.value, ImageViewMode.SOURCE_RECTIFIED
@@ -879,7 +878,6 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         board_params = self.board_parameters.get_parameters_values()
         detector_params = self.detector.get_parameters_values()
         calibrator_type = self.calibrator_type_combobox.currentData()
-        print(calibrator_type.value["name"], flush=True)
         calib_params = self.calibrator_dict[calibrator_type].get_parameters_values()
         with open(filename, "w") as file:
             yaml.dump({"board_parameters": board_params}, file, default_flow_style=False)
@@ -978,19 +976,19 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.single_shot_reprojection_error_rms_label.setText("Reprojection error (rms):")
             board_speed = None
             self.image_view.set_draw_indicators(
-                board_speed,
-                self.data_collector.max_allowed_pixel_speed.value,
-                self.data_collector.get_skew_percentage(),
-                self.data_collector.get_size_percentage(),
-                0,
-                0,  # rows cols linear error
-                0,
-                0,  # rows cols percentage linear error
-                0.0,  # aspect ratio
-                0,
-                0,
-                self.indicators_alpha_spinbox.value(),
-                False,
+                board_speed = board_speed,
+                max_allowed_board_speed = self.data_collector.max_allowed_pixel_speed.value,
+                skew_percentage = self.data_collector.get_skew_percentage(),
+                board_size_percentage = self.data_collector.get_size_percentage(),
+                rows_linear_error = 0.0,
+                cols_linear_error = 0.0,  # rows cols linear error
+                pct_err_rows = 0.0,
+                pct_err_cols = 0.0,  # rows cols percentage linear error
+                aspect_ratio = 0.0,  # aspect ratio
+                pan = 0.0,
+                tilt = 0.0,
+                alpha_indicators = self.indicators_alpha_spinbox.value(),
+                value = False,
             )
 
         else:
@@ -1112,24 +1110,24 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 )
 
             board_speed = (
-                0 if self.last_detection is None else detection.get_speed(self.last_detection)
+                100 if self.last_detection is None else detection.get_speed(self.last_detection)
             )
             self.last_detection = detection
             pan, tilt = rough_angles
             self.image_view.set_draw_indicators(
-                board_speed,
-                self.data_collector.max_allowed_pixel_speed.value,
-                self.data_collector.get_skew_percentage(),
-                self.data_collector.get_size_percentage(),
-                err_rms_rows,
-                err_rms_cols,
-                pct_err_rows,
-                pct_err_cols,
-                detection.get_aspect_ratio_pattern(camera_model),
-                pan,
-                tilt,
-                self.indicators_alpha_spinbox.value(),
-                self.draw_indicators_checkbox.isChecked(),
+                board_speed = board_speed,
+                max_allowed_board_speed = self.data_collector.max_allowed_pixel_speed.value,
+                skew_percentage = self.data_collector.get_skew_percentage(),
+                board_size_percentage = self.data_collector.get_size_percentage(),
+                rows_linear_error = err_rms_rows,
+                cols_linear_error = err_rms_cols,
+                pct_err_rows = pct_err_rows,
+                pct_err_cols = pct_err_cols,
+                aspect_ratio = detection.get_aspect_ratio_pattern(camera_model),
+                pan = pan,
+                tilt = tilt,
+                alpha_indicators = self.indicators_alpha_spinbox.value(),
+                value = self.draw_indicators_checkbox.isChecked(),
             )
 
         # Draw training / evaluation points
