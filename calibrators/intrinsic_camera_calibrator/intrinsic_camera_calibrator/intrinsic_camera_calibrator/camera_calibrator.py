@@ -882,11 +882,11 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         with open(filename, "w") as file:
             all_params = {
                 "board_parameters": board_params,
-                "board_type" : self.board_type.value["name"],
+                "board_type": self.board_type.value["name"],
                 "calibrator_type": calibrator_type.value["name"],
                 "calibration_parameters": calib_params,
                 "data_collector": data_coll_params,
-                "detector_params": detector_params
+                "detector_params": detector_params,
             }
 
             yaml.dump(all_params, file, default_flow_style=False)
