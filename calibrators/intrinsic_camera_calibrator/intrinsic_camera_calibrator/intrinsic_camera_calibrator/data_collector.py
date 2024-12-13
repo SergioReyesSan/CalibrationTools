@@ -221,10 +221,10 @@ class DataCollector(ParameterizedClass):
             bool, value=True, min_value=False, max_value=True
         )
         self.max_allowed_max_reprojection_error = Parameter(
-            float, value=0.5, min_value=0.0, max_value=2.0
+            float, value=2.0, min_value=0.0, max_value=2.0
         )
         self.max_allowed_rms_reprojection_error = Parameter(
-            float, value=0.3, min_value=0.0, max_value=2.0
+            float, value=0.5, min_value=0.0, max_value=2.0
         )
 
         # New samples are required to be "different" from the ones already in the dataset
