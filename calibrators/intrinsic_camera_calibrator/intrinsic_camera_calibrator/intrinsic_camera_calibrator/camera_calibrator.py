@@ -396,7 +396,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.raw_detection_label = QLabel("Detected:")
         self.raw_linear_error_rows_rms_label = QLabel("Linear error rows (rms):")
         self.raw_linear_error_cols_rms_label = QLabel("Linear error cols (rms):")
-        self.aspect_ratio_label = QLabel("Aspect Ratio:")
+        self.aspect_ratio_label = QLabel("Aspect ratio:")
         self.rough_tilt_label = QLabel("Rough tilt:")
         self.rough_angles_label = QLabel("Rough angles:")
         self.rough_position_label = QLabel("Rough position:")
@@ -718,7 +718,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             )
         if self.operation_mode == OperationMode.EVALUATION:
             self.setWindowTitle(
-                f"Camera intrinsics Evaluation Mode ({self.data_source.get_camera_name()})"
+                f"Camera intrinsics evaluation mode ({self.data_source.get_camera_name()})"
             )
 
         logging.info("Init")
@@ -880,14 +880,16 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         calibrator_type = self.calibrator_type_combobox.currentData()
         calib_params = self.calibrator_dict[calibrator_type].get_parameters_values()
         with open(filename, "w") as file:
-            yaml.dump({"board_parameters": board_params}, file, default_flow_style=False)
-            yaml.dump({"board_type": self.board_type.value["name"]}, file, default_flow_style=False)
-            yaml.dump(
-                {"calibrator_type": calibrator_type.value["name"]}, file, default_flow_style=False
-            )
-            yaml.dump({"calibration_parameters": calib_params}, file, default_flow_style=False)
-            yaml.dump({"data_collector": data_coll_params}, file, default_flow_style=False)
-            yaml.dump({"detector_params": detector_params}, file, default_flow_style=False)
+            all_params = {
+                "board_parameters": board_params,
+                "board_type" : self.board_type.value["name"],
+                "calibrator_type": calibrator_type.value["name"],
+                "calibration_parameters": calib_params,
+                "data_collector": data_coll_params,
+                "detector_params": detector_params
+            }
+
+            yaml.dump(all_params, file, default_flow_style=False)
 
     def on_save_clicked(self):
         output_folder = QFileDialog.getExistingDirectory(
@@ -964,7 +966,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.raw_detection_label.setText("Detected: False")
             self.raw_linear_error_rows_rms_label.setText("Linear error rows rms:")
             self.raw_linear_error_cols_rms_label.setText("Linear error cols rms:")
-            self.aspect_ratio_label.setText("Aspect Ratio:")
+            self.aspect_ratio_label.setText("Aspect ratio:")
             self.rough_tilt_label.setText("Rough tilt:")
             self.rough_angles_label.setText("Rough angles:")
             self.rough_position_label.setText("Rough position:")
@@ -1075,7 +1077,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 f"Linear error cols rms:  {err_rms_cols:.2f} px"  # noqa E231
             )
             self.aspect_ratio_label.setText(
-                f"Aspect Ratio:  {detection.get_aspect_ratio_pattern(camera_model):.2f} px"  # noqa E231
+                f"Aspect ratio:  {detection.get_aspect_ratio_pattern(camera_model):.2f} px"  # noqa E231
             )
             self.rough_tilt_label.setText(
                 f"Rough tilt: {detection.get_tilt(camera_model):.2f} degrees"  # noqa E231
@@ -1197,7 +1199,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             )
         if self.operation_mode == OperationMode.EVALUATION:
             self.setWindowTitle(
-                f"Camera intrinsics Evaluation Mode ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
+                f"Camera intrinsics evaluation mode ({self.data_source.get_camera_name()}). Data delay={detection_delay: .2f} Detection time={detection_time: .2f} fps={self.estimated_fps: .2f} Data time={img_stamp: .2f}"
             )
 
         self.image_view.update()
