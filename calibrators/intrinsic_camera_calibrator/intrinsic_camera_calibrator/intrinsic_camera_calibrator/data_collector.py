@@ -201,7 +201,7 @@ class DataCollector(ParameterizedClass):
         super().__init__(cfg=cfg, **kwargs)
 
         # Option to limit the amount of collection samples in case there are resource constraints
-        self.max_samples = Parameter(int, value=500, min_value=6, max_value=5000)
+        self.max_samples = Parameter(int, value=500, min_value=6, max_value=7000)
 
         # In addition to the training dataset we also
         self.decorrelate_eval_samples = Parameter(int, value=5, min_value=1, max_value=100)

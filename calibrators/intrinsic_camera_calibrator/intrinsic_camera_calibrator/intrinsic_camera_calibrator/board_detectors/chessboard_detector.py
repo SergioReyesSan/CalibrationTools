@@ -92,8 +92,8 @@ class ChessBoardDetector(BoardDetector):
                     self.detection_results_signal.emit(img, None, stamp)
                     return
 
-            if self.roi:
-                cv2.rectangle(img, (self.roi[0], self.roi[1]), (self.roi[2], self.roi[3]), (0, 255, 0), 2)
+            # if self.roi:
+            #     cv2.rectangle(img, (self.roi[0], self.roi[1]), (self.roi[2], self.roi[3]), (0, 255, 0), 2)
 
         else:
             # Find the resized dimensions

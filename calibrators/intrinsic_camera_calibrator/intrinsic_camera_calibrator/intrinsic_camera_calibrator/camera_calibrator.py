@@ -123,7 +123,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.image_view_mode = ImageViewMode.SOURCE_UNRECTIFIED
         self.paused = False
         self.last_detection = None
-        self.skip_next_img = 3
+        self.skip_next_img = 2
 
         self.time_for_debug = time.time()
 
@@ -557,6 +557,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.draw_linearity_heatmap_checkbox.setChecked(False)
         self.draw_linearity_heatmap_checkbox.stateChanged.connect(draw_linearity_heatmap_callback)
 
+        self.draw_detection_roi_checkbox = QCheckBox("Draw detection roi")
+        self.draw_detection_roi_checkbox.setChecked(True)
+        # self.draw_detection_roi_checkbox.stateChanged.connect(draw_linearity_heatmap_callback)
+
         self.draw_indicators_checkbox = QCheckBox("Draw indicators")
         self.draw_indicators_checkbox.setChecked(False)
 
@@ -599,6 +603,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         visualization_options_layout.addWidget(self.draw_evaluation_heatmap_checkbox)
         visualization_options_layout.addWidget(self.draw_linearity_heatmap_checkbox)
         visualization_options_layout.addWidget(self.draw_indicators_checkbox)
+        visualization_options_layout.addWidget(self.draw_detection_roi_checkbox)
         visualization_options_layout.addWidget(rendering_alpha_label)
         visualization_options_layout.addWidget(self.rendering_alpha_spinbox)
         visualization_options_layout.addWidget(undistortion_alpha_label)
@@ -951,6 +956,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         # Signal that the detector is free
         print("elapsedtime_Debug: ", time.time()- self.time_for_debug, flush=True)
         self.consumed_data_signal.emit()
+        print("consumed data signal after_detection emitted", flush=True)
         self.time_for_debug = time.time()
 
         if img is None:
@@ -958,6 +964,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
             if self.pending_detection_request:
                 self.should_process_image.emit()
+                print("should procedd emmit pending detection", flush=True)
 
             return
 
@@ -995,9 +1002,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 0,
                 0,
                 self.indicators_alpha_spinbox.value(),
+                None,
                 False,
             )
-            self.skip_next_img = 3 # skips the next images if there are no detections
+            self.skip_next_img = 2 # skips the next images if there are no detections
 
         else:
             camera_model_cfg, camera_model_type = self.calibrator_dict[
@@ -1015,7 +1023,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                     mode=self.operation_mode,
                 )
                 # filter_result = CollectionStatus.REJECTED
-                print("dat_coll : ", time.time()-dat_coll_start, flush=True)
+                #print("dat_coll : ", time.time()-dat_coll_start, flush=True)
             else:
                 filter_result = CollectionStatus.NOT_EVALUATED
 
@@ -1059,7 +1067,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.image_view.set_grid_size_pixels(detection.get_flattened_cell_sizes().mean())
             repr_err_time = time.time()
             reprojection_errors = detection.get_reprojection_errors(camera_model)
-            print("repr_err_time: ", time.time() - repr_err_time, flush=True)
+            #print("repr_err_time: ", time.time() - repr_err_time, flush=True)
             reprojection_errors_norm = np.linalg.norm(reprojection_errors, axis=-1)
             reprojection_error_max = reprojection_errors_norm.max()
             reprojection_error_mean = reprojection_errors_norm.mean()
@@ -1138,8 +1146,22 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 pan,
                 tilt,
                 self.indicators_alpha_spinbox.value(),
+                detection._get_border_image_points(),
                 self.draw_indicators_checkbox.isChecked(),
             )
+
+            def get_roi_padding(corners, frame_shape, padding = 120):
+                x_min, y_min = np.min(corners, axis=0).ravel().astype(int) - padding
+                x_max, y_max = np.max(corners, axis=0).ravel().astype(int) + padding
+                x_min, y_min = max(0, x_min), max(0, y_min)
+                x_max, y_max = min(frame_shape[1], x_max), min(frame_shape[0], y_max)
+                return (x_min, y_min, x_max, y_max)
+
+
+            if self.draw_detection_roi_checkbox.isChecked():
+                h, w = img.shape[0:2]
+                self.roi = get_roi_padding(detection._get_border_image_points(), img.shape[:2])
+                cv2.rectangle(img, (self.roi[0], self.roi[1]), (self.roi[2], self.roi[3]), (0, 255, 0), 3)
 
         # Draw training / evaluation points
         self.image_view.set_draw_training_points(self.draw_training_points_checkbox.isChecked())
@@ -1217,6 +1239,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         # If there was a pending detection, we process it now
         if self.pending_detection_request:
             self.should_process_image.emit()
+            print("from ending_reques send should process emitted", flush=True)
 
     def update_current_camera_model(self):
         """Send a request to update the current camera model."""
@@ -1237,13 +1260,14 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     def process_data(self):
         """Request the detector to process the image (the detector itself runs in another thread). Depending on the ImageViewMode selected, the image is also rectified."""
         stamp = self.unprocessed_stamp
-
+        print("processing data",flush=True)
         if self.image_view_type_combobox.currentData() in {
             ImageViewMode.SOURCE_UNRECTIFIED,
             ImageViewMode.TRAINING_DB_UNRECTIFIED,
             ImageViewMode.EVALUATION_DB_UNRECTIFIED,
         }:
             img = copy.deepcopy(self.unprocessed_image)
+            print("deepcopied",flush=True)
         elif self.image_view_type_combobox.currentData() == ImageViewMode.SOURCE_RECTIFIED:
             assert self.calibrated_camera_model is not None
             img = self.calibrated_camera_model.rectify(
@@ -1255,7 +1279,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.pending_detection_request = False
         self.pending_detection_result = True
         self.detection_request_time = time.time()
-
+        print("requesting detection",flush=True)
         self.request_image_detection.emit(img, stamp)
 
     def process_db_data(self, img):
@@ -1274,10 +1298,11 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     def process_new_data(self):
         """Attempt to request the detector to process an image. However, if it there is an image being processed, does not enqueue them indefinitely. Instead, only leave the last one."""
         # if was not found the pattern skip some frames
-        if self.skip_next_img > 0:
+        if self.skip_next_img > 2:
             print("skipping frame", flush=True)
-            self.skip_next_img -= 1
+            self.skip_next_img -=21
             self.consumed_data_signal.emit()
+            print("consumed data signal emitted", flush=True)
             return
         if self.paused:
             return
@@ -1301,6 +1326,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.pending_detection_request = True
         else:
             self.should_process_image.emit()
+            print("should_process_image signal emitted", flush=True)
 
     def data_source_external_callback(self, img: np.array, stamp: float):
         """
@@ -1317,6 +1343,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.produced_stamp = stamp
             # Using a signal from another thread results in the slot being executed in the class Qt thread
             self.produced_data_signal.emit()
+            print("produced data signal emitted", flush=True)
 
     def on_parameter_changed(self):
         self.should_process_image.emit()
