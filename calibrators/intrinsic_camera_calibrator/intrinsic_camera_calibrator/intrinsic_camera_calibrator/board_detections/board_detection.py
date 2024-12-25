@@ -244,7 +244,7 @@ class BoardDetection:
         tilt, pan = self.get_rotation_angles(model)
         acceptance_angle = 10
 
-        # Dont update if the board has big angles, calculation will not be accurate
+        # Do not update if the board has large out-of-plane rotations since calculations will not be accurate
         if np.abs(tilt) > acceptance_angle or np.abs(pan) > acceptance_angle:
             return 0.0
         # Calculate distances between adjacent corners
