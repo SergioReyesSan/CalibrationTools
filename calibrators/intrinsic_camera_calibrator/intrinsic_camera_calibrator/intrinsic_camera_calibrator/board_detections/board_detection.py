@@ -240,7 +240,7 @@ class BoardDetection:
         return np.linalg.norm(current_image_points - last_image_points, axis=-1).mean()
 
     def get_aspect_ratio_pattern(self, model: CameraModel) -> float:
-        """Get aspect ratio using the calibration pattern, which should be squared."""
+        """Get the aspect ratio using the calibration pattern, which should be squared."""
         tilt, pan = self.get_rotation_angles(model)
         acceptance_angle = 10
 
