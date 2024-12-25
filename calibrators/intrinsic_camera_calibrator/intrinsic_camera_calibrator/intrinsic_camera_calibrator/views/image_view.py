@@ -270,7 +270,7 @@ class ImageView(QGraphicsItem, QObject):
         )
         painter.drawText(position_text_speed, "Speed")
 
-        # TODO(Sergio): define percentage to change skew and pct size to change to green
+        # TODO(SergioReyesSan): define percentage to change skew and pct size to change to green
         threshold_to_be_green = 0.3
         if self.skew_percentage < threshold_to_be_green:
             pen_skew = QPen(color_red)

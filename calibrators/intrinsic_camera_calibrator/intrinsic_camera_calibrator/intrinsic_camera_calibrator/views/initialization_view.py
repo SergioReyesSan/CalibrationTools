@@ -125,7 +125,7 @@ class InitializationView(QWidget):
 
         self.params_combobox.currentIndexChanged.connect(on_params_combo_box_changed)
 
-        self.params_group = QGroupBox("Parameters Profile")
+        self.params_group = QGroupBox("Parameters profile")
         self.params_group.setFlat(True)
         params_layout = QVBoxLayout()
         params_layout.addWidget(self.params_combobox)

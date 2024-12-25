@@ -599,7 +599,7 @@ class DataCollector(ParameterizedClass):
         mode: OperationMode = OperationMode.CALIBRATION,
     ) -> CollectionStatus:
         """Evaluate detections made in evaluation mode."""
-        # process witout filtering detections
+        # process without filtering detections
         self.update_linearity_heatmap(self.linearity_heatmap, detection)
 
     def get_skew_percentage(self):
