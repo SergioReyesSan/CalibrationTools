@@ -102,7 +102,7 @@ class BoardDetection:
         raise NotImplementedError
 
     def restart_linearity_heatmap(self):
-        """Restart linearity heatmap."""
+        """Restart the linearity heatmap."""
         raise NotImplementedError
 
     def get_center_2d(self) -> np.array:
