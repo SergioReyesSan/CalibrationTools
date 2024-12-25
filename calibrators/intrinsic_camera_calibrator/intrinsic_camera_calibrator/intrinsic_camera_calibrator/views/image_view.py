@@ -281,7 +281,7 @@ class ImageView(QGraphicsItem, QObject):
         painter.setPen(pen_skew)
         painter.setBrush(brush_skew)
 
-        # Draw Skew text
+        # Draw skew text
         position_text_skew = QPointF(
             int(display_size.width() * 0.01), int(display_size.height() * 0.88)
         )
