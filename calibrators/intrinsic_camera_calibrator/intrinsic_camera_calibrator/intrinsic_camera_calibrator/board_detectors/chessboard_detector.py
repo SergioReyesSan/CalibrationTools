@@ -40,7 +40,6 @@ class ChessBoardDetector(BoardDetector):
         self.max_lost_frames = 3
 
     def detect(self, img: np.array, stamp: float):
-        st_time = time.time()
         """Slot to detect boards from an image. Results are sent through the detection_results signals."""
         if img is None:
             self.detection_results_signal.emit(None, None)
@@ -70,7 +69,6 @@ class ChessBoardDetector(BoardDetector):
         grayscale = to_grayscale(img)
 
         if not resized_detection or max(h, w) <= resized_max_resolution:
-            print("Detecting in full mode ", flush=True)
             if self.roi is None or self.lost_frames >= self.max_lost_frames:
                 (ok, corners) = cv2.findChessboardCorners(grayscale, (cols, rows), flags=flags)
                 if ok:
@@ -164,5 +162,4 @@ class ChessBoardDetector(BoardDetector):
             object_points=object_points,
             image_points=image_points,
         )
-        print("detect_fcn: ", time.time()-st_time, flush=True)
         self.detection_results_signal.emit(img, detection, stamp)

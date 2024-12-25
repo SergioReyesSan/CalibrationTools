@@ -100,7 +100,6 @@ class InitializationView(QWidget):
                     "All Files (*.*);;Text Files (*.yaml)"
                 )
                 if file_name:
-                    print(f"Selected file: {file_name}")
                     config_file_path = file_name
             elif self.params_combobox.currentText() == "C1":
                 config_file_path = os.path.join(config_dir, 'c1_intrinsics_calibrator.yaml')
@@ -118,7 +117,6 @@ class InitializationView(QWidget):
                         cfg = yaml.safe_load(stream)
                         self.cfg = defaultdict(dict, cfg)
                         self.update_board_type()
-                        print("successfully loaded")
                 except Exception as e:
                     logging.error(f"Could not load the parameters from the YAML file ({e})")
 

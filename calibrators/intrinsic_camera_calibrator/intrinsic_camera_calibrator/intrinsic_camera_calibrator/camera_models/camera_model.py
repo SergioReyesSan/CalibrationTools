@@ -196,13 +196,11 @@ class CameraModel:
             .reshape(d["camera_matrix"]["rows"], d["camera_matrix"]["cols"])
             .astype(np.float64)
         )
-        print(self.k,flush=True)
         self.d = (
             np.array(d["distortion_coefficients"]["data"])
             .reshape(d["distortion_coefficients"]["rows"], d["distortion_coefficients"]["cols"])
             .astype(np.float64)
         )
-        print(self.d,flush=True)
 
     def update_config(self, **kwargs):
         """Update the camera model configuration."""
@@ -214,9 +212,6 @@ class CameraModel:
             self.k, self.d, (self.width, self.height), alpha
         )
 
-        print("get_k:", self.k,flush=True)
-        print("get_d:", self.d,flush=True)
-        print("get_undistk:", undistorted_k,flush=True)
         return type(self)(
             k=undistorted_k, d=np.zeros_like(self.d), height=self.height, width=self.width
         )

@@ -226,7 +226,6 @@ class ImageView(QGraphicsItem, QObject):
         pan: float,
         tilt: float,
         alpha_indicators: float,
-        roi: Tuple[np.array, np.array, np.array, np.array],
         value: bool,
     ):
         """Set values for indicators."""
@@ -243,8 +242,6 @@ class ImageView(QGraphicsItem, QObject):
         self.tilt = tilt
         self.alpha_indicators = alpha_indicators
         self.is_draw_indicators = value
-        self.roi = roi
-        print("Roi to indicators, ", roi, flush=True)
 
     def draw_indicators(self, painter: QPainter, display_size):
         """Draw indicators for speed, skew, size aspect ratio, angles of the detected board."""
