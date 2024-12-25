@@ -454,7 +454,7 @@ class DataCollector(ParameterizedClass):
                     heatmap[y, x] = 1 * dist_error
 
     def restart_linearity_heatmap(self):
-        """Restart heatmap created by aspect ratio."""
+        """Restart the heatmap created by aspect ratio."""
         self.linearity_heatmap = np.zeros((self.heatmap_cells.value, self.heatmap_cells.value))
 
     def evaluate_redundancy(
