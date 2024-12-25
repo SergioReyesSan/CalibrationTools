@@ -431,7 +431,7 @@ class DataCollector(ParameterizedClass):
                 p = image_points[j][i]
                 dist_error = np.sqrt(squared_error(p, p1, p2))
                 if dist_error / points_dist > max_pct_error_tolerance:
-                    # if distance is too big most likely is a miss detection
+                    # if the distance is too large it is most likely a miss detection
                     dist_error = 0
                 x = int(heatmap.shape[1] * p[0] / detection.width)
                 y = int(heatmap.shape[0] * p[1] / detection.height)
