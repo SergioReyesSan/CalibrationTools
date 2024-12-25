@@ -24,7 +24,14 @@ calibration_parameters:
   viz_tilt_resolution: 15.0
   viz_max_tilt_deg: 45.0
   viz_z_cells: 12
-  radial_distortion_coefficients: 3
+  radial_distortion_coefficients: 2
+  rational_distortion_coefficients: 0
+  use_tangential_distortion: true
+  enable_prism_model: false
+  fix_principal_point: false
+  fix_aspect_ratio: false
+  use_lu_decomposition: false
+  use_qr_decomposition: false
 
 calibrator_type: opencv
 
@@ -54,6 +61,6 @@ chess_board_detector:
   adaptive_thresh: false
   normalize_image: false
   fast_check: false
-  resized_detection: false 
+  resized_detection: false
   resized_max_resolution: 1000
   sub_pixel_refinement: true

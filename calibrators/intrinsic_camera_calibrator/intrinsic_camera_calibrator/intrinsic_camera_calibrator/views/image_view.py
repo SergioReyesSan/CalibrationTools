@@ -259,7 +259,7 @@ class ImageView(QGraphicsItem, QObject):
         speed_indicator = QRectF(
             QPointF(0, 0), QSize(display_size.width(), int(display_size.height() * 0.04))
         )
-        # Draw the rectangle for speed indication
+        # Draw the rectangle for the speed indicator
         painter.drawRect(speed_indicator)
 
         # Set the font according to the window size
@@ -271,7 +271,7 @@ class ImageView(QGraphicsItem, QObject):
         )
         painter.drawText(position_text_speed, "Speed")
 
-        # ToDo: define percentage to change skew and pct size to change to green
+        # TODO(SergioReyesSan): define percentage to change skew and pct size to change to green
         threshold_to_be_green = 0.3
         if self.skew_percentage < threshold_to_be_green:
             pen_skew = QPen(color_red)
@@ -282,7 +282,7 @@ class ImageView(QGraphicsItem, QObject):
         painter.setPen(pen_skew)
         painter.setBrush(brush_skew)
 
-        # Draw Skew text
+        # Draw skew text
         position_text_skew = QPointF(
             int(display_size.width() * 0.01), int(display_size.height() * 0.88)
         )
@@ -298,7 +298,7 @@ class ImageView(QGraphicsItem, QObject):
         # Draw the skew progress bar
         painter.drawRect(skew_indicator)
 
-        # ToDo: define percentage to change skew and pct size to change to green
+        # TODO(Sergio): define percentage to change skew and pct size to change to green
         threshold_to_be_green = 0.2
         if self.board_size_percentage < threshold_to_be_green:
             pen_size_board = QPen(color_red)
