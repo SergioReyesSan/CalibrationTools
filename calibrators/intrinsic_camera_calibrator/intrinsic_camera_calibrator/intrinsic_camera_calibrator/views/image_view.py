@@ -258,7 +258,7 @@ class ImageView(QGraphicsItem, QObject):
         speed_indicator = QRectF(
             QPointF(0, 0), QSize(display_size.width(), int(display_size.height() * 0.04))
         )
-        # Draw the rectangle for speed indication
+        # Draw the rectangle for the speed indicator
         painter.drawRect(speed_indicator)
 
         # Set the font according to the window size
