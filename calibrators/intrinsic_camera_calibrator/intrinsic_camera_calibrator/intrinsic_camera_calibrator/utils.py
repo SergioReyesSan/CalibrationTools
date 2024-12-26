@@ -32,8 +32,8 @@ def to_grayscale(img: np.array) -> np.array:
         return img
 
 
-def save_intrinsics(camera_model: CameraModel, alpha, camera_name, file_path: str):
-    data = camera_model.as_dict(alpha)
+def save_intrinsics(camera_model: CameraModel, alpha, camera_name, file_path: str, rectify_option):
+    data = camera_model.as_dict(alpha, rectify_option)
     data["camera_name"] = camera_name
 
     def format_list(data):

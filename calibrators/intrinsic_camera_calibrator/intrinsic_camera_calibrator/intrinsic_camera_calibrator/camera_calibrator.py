@@ -57,6 +57,7 @@ from intrinsic_camera_calibrator.camera_models.camera_model_factory import make_
 from intrinsic_camera_calibrator.data_collector import CollectionStatus
 from intrinsic_camera_calibrator.data_collector import DataCollector
 from intrinsic_camera_calibrator.data_sources.data_source import DataSource
+from intrinsic_camera_calibrator.data_sources.data_source import DataSourceEnum
 from intrinsic_camera_calibrator.parameter import ParameterizedClass
 from intrinsic_camera_calibrator.types import ImageViewMode
 from intrinsic_camera_calibrator.types import OperationMode
@@ -123,7 +124,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.image_view_mode = ImageViewMode.SOURCE_UNRECTIFIED
         self.paused = False
         self.last_detection = None
-        self.skip_next_img = 2
+        self.skip_next_img = 0
 
         self.initialization_view = InitializationView(self, cfg)
 
@@ -165,6 +166,12 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.image_view_type_combobox.addItem(image_view_type.value, image_view_type)
 
         self.image_view_type_combobox.setEnabled(False)
+
+        self.rectify_label = QLabel("Rectify option:")
+        self.rectify_type_combobox = QComboBox()
+        self.rectify_type_combobox.addItem("Opencv", 0)
+        self.rectify_type_combobox.addItem("New + Aspect ratio", 1)
+        self.rectify_type_combobox.setEnabled(False)
 
         def pause_callback():
             if self.paused:
@@ -220,11 +227,15 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.evaluation_sample_label.setText(f"Evaluation sample: {index}")
             img = self.data_collector.get_evaluation_image(index)
             self.process_db_data(img)
+        
+        def on_rectify_type_change(index):
+            self.calibrated_camera_model._cached_undistorted_model = None
 
         self.pause_button.clicked.connect(pause_callback)
         self.image_view_type_combobox.currentIndexChanged.connect(on_image_view_type_change)
         self.training_sample_slider.valueChanged.connect(on_training_sample_changed)
         self.evaluation_sample_slider.valueChanged.connect(on_evaluation_sample_changed)
+        self.rectify_type_combobox.currentIndexChanged.connect(on_rectify_type_change)
 
         mode_options_layout = QVBoxLayout()
         mode_options_layout.setAlignment(Qt.AlignTop)
@@ -237,6 +248,8 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         mode_options_layout.addWidget(self.training_sample_slider)
         mode_options_layout.addWidget(self.evaluation_sample_label)
         mode_options_layout.addWidget(self.evaluation_sample_slider)
+        mode_options_layout.addWidget(self.rectify_label)
+        mode_options_layout.addWidget(self.rectify_type_combobox)
 
         self.mode_options_group.setLayout(mode_options_layout)
 
@@ -609,6 +622,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self,
         mode: OperationMode,
         data_source: DataSource,
+        source_type: DataSourceEnum,
         board_type: BoardEnum,
         board_parameters: ParameterizedClass,
         initial_intrinsics: CameraModel,
@@ -616,6 +630,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     ):
         self.operation_mode = mode
         self.data_source = data_source
+        self.data_source_type = source_type
         self.board_type = board_type
         self.board_parameters = board_parameters
         self.current_camera_model = initial_intrinsics
@@ -740,6 +755,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             #  Initial state of the elements on evaluation mode
             self.calibrated_camera_model = self.current_camera_model
             self.image_view_type_combobox.setEnabled(True)
+            self.rectify_type_combobox.setEnabled(True)
             self.undistortion_alpha_spinbox.setEnabled(True)
             self.draw_evaluation_heatmap_checkbox.setEnabled(False)
             self.draw_evaluation_points_checkbox.setEnabled(False)
@@ -776,6 +792,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         evaluation_inlier_rms_error: float,
     ):
         self.image_view_type_combobox.setEnabled(True)
+        self.rectify_type_combobox.setEnabled(True)
         self.undistortion_alpha_spinbox.setEnabled(True)
         self.current_camera_model = calibrated_model
         self.calibrated_camera_model = calibrated_model
@@ -832,6 +849,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         evaluation_inlier_rms_error: float,
     ):
         self.image_view_type_combobox.setEnabled(True)
+        self.rectify_type_combobox.setEnabled(True)
         self.undistortion_alpha_spinbox.setEnabled(True)
 
         self.calibration_status_label.setText("Calibration status: idle")
@@ -910,6 +928,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.undistortion_alpha_spinbox.value(),
             self.data_source.get_camera_name(),
             os.path.join(output_folder, f"{self.data_source.get_camera_name()}_info.yaml"),
+            self.rectify_type_combobox.currentData()
         )
 
         self.save_parameters(os.path.join(output_folder, "parameters.yaml"))
@@ -993,7 +1012,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 alpha_indicators=self.indicators_alpha_spinbox.value(),
                 value=False,
             )
-            self.skip_next_img = 2 # skips the next images if there are no detections
+            self.skip_next_img = 5 # skips the next images if there are no detections
 
         else:
             camera_model_cfg, camera_model_type = self.calibrator_dict[
@@ -1008,6 +1027,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                     detection=detection,
                     camera_model=camera_model,
                     mode=self.operation_mode,
+                    source_type=self.data_source_type,
                 )
             else:
                 filter_result = CollectionStatus.NOT_EVALUATED
@@ -1239,7 +1259,8 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         elif self.image_view_type_combobox.currentData() == ImageViewMode.SOURCE_RECTIFIED:
             assert self.calibrated_camera_model is not None
             img = self.calibrated_camera_model.rectify(
-                self.unprocessed_image, self.undistortion_alpha_spinbox.value()
+                self.unprocessed_image, self.undistortion_alpha_spinbox.value(),
+                self.rectify_type_combobox.currentData()
             )
         else:
             raise NotImplementedError
@@ -1265,10 +1286,15 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     def process_new_data(self):
         """Attempt to request the detector to process an image. However, if it there is an image being processed, does not enqueue them indefinitely. Instead, only leave the last one."""
         # if was not found the pattern skip some frames
-        if self.skip_next_img > 2:
+        if self.data_collector.skip_frames_when_not_detection.value and self.skip_next_img > 1 and self.data_source_type != DataSourceEnum.FILES:
+            self.detector.restart_lost_frames_counter() # to force next frame detection
             self.skip_next_img -= 1
             self.consumed_data_signal.emit()
             return
+        
+        if self.data_source_type == DataSourceEnum.FILES:
+            self.detector.restart_lost_frames_counter() # to force next frame detection
+
         if self.paused:
             return
 
