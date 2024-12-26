@@ -34,7 +34,7 @@ class ChessBoardDetector(BoardDetector):
         self.resized_detection = Parameter(bool, value=True, min_value=False, max_value=True)
         self.resized_max_resolution = Parameter(int, value=1000, min_value=500, max_value=3000)
         self.sub_pixel_refinement = Parameter(bool, value=True, min_value=False, max_value=True)
-        super().set_parameters(**kwargs["cfg"])
+        self.set_parameters(**kwargs["cfg"])
         self.roi = None
         self.lost_frames = 0
         self.max_lost_frames = 3
