@@ -1112,7 +1112,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 )
 
             board_speed = (
-                100 if self.last_detection is None else detection.get_speed(self.last_detection)
+                100.0 if self.last_detection is None else detection.get_speed(self.last_detection)
             )
             self.last_detection = detection
             pan, tilt = rough_angles

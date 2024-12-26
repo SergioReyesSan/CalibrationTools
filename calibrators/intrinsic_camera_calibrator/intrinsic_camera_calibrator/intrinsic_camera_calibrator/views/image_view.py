@@ -246,7 +246,7 @@ class ImageView(QGraphicsItem, QObject):
         """Draw indicators for speed, skew, size aspect ratio, angles of the detected board."""
         color_green = QColor(0.0, 255, 0.0, int(255 * self.alpha_indicators))
         color_red = QColor(255, 0.0, 0.0, int(255 * self.alpha_indicators))
-        # Change color according tot he speed
+        # Change color according to the board speed
         if self.current_board_speed < self.max_board_allowed_speed:
             pen = QPen(color_green)
             brush = QBrush(color_green)
