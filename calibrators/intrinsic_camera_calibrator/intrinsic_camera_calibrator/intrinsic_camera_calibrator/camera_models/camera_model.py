@@ -169,10 +169,13 @@ class CameraModel:
             "cols": 3,
             "data": [round(e.item(), 9) for e in self.k.flatten()],
         }
-        d["distortion_model"] = "plumb_bob"
+        distortion_model_used = "plumb_bob"
+        if self.d.size > 5:
+            distortion_model_used = "rational_polynomial" 
+        d["distortion_model"] = distortion_model_used
         d["distortion_coefficients"] = {
             "rows": 1,
-            "cols": 5,
+            "cols": int(self.d.size),
             "data": [round(e.item(), 9) for e in self.d.flatten()],
         }
         d["projection_matrix"] = {
