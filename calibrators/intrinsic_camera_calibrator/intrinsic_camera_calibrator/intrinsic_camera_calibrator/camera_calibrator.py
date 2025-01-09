@@ -13,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import debugpy
+debugpy.listen(5678)
+debugpy.wait_for_client()  # blocks execution until client is attached
 from collections import defaultdict
 import copy
 import logging
@@ -227,7 +230,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.evaluation_sample_label.setText(f"Evaluation sample: {index}")
             img = self.data_collector.get_evaluation_image(index)
             self.process_db_data(img)
-        
+
         def on_rectify_type_change(index):
             self.calibrated_camera_model._cached_undistorted_model = None
 
@@ -776,6 +779,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.detector.moveToThread(self.detector_thread)
         self.detector.detection_results_signal.connect(self.process_detection_results)
         self.request_image_detection.connect(self.detector.detect)
+        self.request_image_detection.connect(self.debug_detect_slot)
+    
+    def debug_detect_slot(*args):
+        print(f"Signal emitted with args: {args}", flush=True)
 
     def process_calibration_results(
         self,
@@ -1255,6 +1262,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             ImageViewMode.TRAINING_DB_UNRECTIFIED,
             ImageViewMode.EVALUATION_DB_UNRECTIFIED,
         }:
+            print("Deep_copy", flush=True)
             img = copy.deepcopy(self.unprocessed_image)
         elif self.image_view_type_combobox.currentData() == ImageViewMode.SOURCE_RECTIFIED:
             assert self.calibrated_camera_model is not None
@@ -1268,7 +1276,24 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.pending_detection_request = False
         self.pending_detection_result = True
         self.detection_request_time = time.time()
-        self.request_image_detection.emit(img, stamp)
+        print("requesting detection", flush=True)
+        if img is None:
+            print("Image is none", flush=True)
+        else:
+            print("Image  has content", flush=True)
+        try:
+            print("try req", flush=True)
+            print("Shape: ", img.shape, flush=True)
+            print("Stamp: ", stamp, flush=True)
+            self.request_image_detection.emit(img, stamp)
+            print("try req emitted", flush=True)
+            # result = self.fn(*self.args, **self.kwargs)
+            # self.signals.result.emit(result)
+        except Exception as e:
+            print("Exception", flush=True)
+            # self.signals.error.emit(str(e))
+        # self.request_image_detection.emit(img, stamp)
+        print("signal detect emitted", flush=True)
 
     def process_db_data(self, img):
         assert self.image_view_type_combobox.currentData() in set(
@@ -1277,7 +1302,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
         with self.lock:
             self.unprocessed_image = img
-
+        print("process_db_data", flush=True)
         if self.pending_detection_result:
             self.pending_detection_request = True
         else:
@@ -1313,6 +1338,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 self.produced_image = None
                 self.produced_stamp = None
 
+        print("pending detection", flush=True)
         if self.pending_detection_result:
             self.pending_detection_request = True
         else:
@@ -1332,6 +1358,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.produced_image = img
             self.produced_stamp = stamp
             # Using a signal from another thread results in the slot being executed in the class Qt thread
+            print("asking for new img", flush=True)
             self.produced_data_signal.emit()
 
     def on_parameter_changed(self):
