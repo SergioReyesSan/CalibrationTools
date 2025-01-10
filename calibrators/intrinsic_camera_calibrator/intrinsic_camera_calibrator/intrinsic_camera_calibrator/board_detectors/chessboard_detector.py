@@ -20,8 +20,7 @@ from intrinsic_camera_calibrator.board_detectors.board_detector import BoardDete
 from intrinsic_camera_calibrator.parameter import Parameter
 from intrinsic_camera_calibrator.utils import to_grayscale
 import numpy as np
-import time
-import debugpy
+import logging
 
 
 class ChessBoardDetector(BoardDetector):
@@ -44,11 +43,8 @@ class ChessBoardDetector(BoardDetector):
         self.lost_frames = self.max_lost_frames
 
     def detect(self, img: np.array, stamp: float):
-        debugpy.debug_this_thread()
         """Slot to detect boards from an image. Results are sent through the detection_results signals."""
-        print("signal received", flush=True)
         if img is None:
-            print("return from detection_ none", flush=True)
             self.detection_results_signal.emit(None, None)
             return
 
@@ -75,7 +71,6 @@ class ChessBoardDetector(BoardDetector):
 
         h, w = img.shape[0:2]
         grayscale = to_grayscale(img)
-        print("finding chess", flush=True)
         if not resized_detection or max(h, w) <= resized_max_resolution:
             if self.roi is None or self.lost_frames >= self.max_lost_frames:
                 (detected, corners) = cv2.findChessboardCorners(grayscale, (cols, rows), flags=flags)
@@ -144,29 +139,25 @@ class ChessBoardDetector(BoardDetector):
             corners = roi_corners + np.array([roi_min_i, roi_min_j], dtype=np.float32)
 
         if sub_pixel_refinement:
-            print("subpixel ref", flush=True)
             dist_matrix = np.linalg.norm(
                 corners.reshape(-1, 1, 2) - corners.reshape(1, -1, 2), axis=-1
             )
-            print("fill_diag", flush=True)
             np.fill_diagonal(dist_matrix, np.inf)
             min_distance = dist_matrix.min()
-            radius = int(np.ceil(min_distance * 0.5))
+            radius = max(1, int(np.ceil(min_distance * 0.5))) # ensuring radius has a value of at least 1
 
             criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-            print("calc_corner subpix", flush=True)
-            print("radius subpix", radius, flush=True)
-            if radius > 0: # to avoid opencv assertion 
+
+            try:
                 corners = cv2.cornerSubPix(grayscale, corners, (radius, radius), (-1, -1), criteria)
-            print("calculated_corner subpix", flush=True)
+            except:
+                logging.error("Corner subpixel refinement window was small or zero")
 
         image_points = corners.reshape((rows, cols, 2))
-        print("xarrays", flush=True)
         x_array = cell_size * (np.array(range(cols)) - 0.5 * cols)
         y_array = cell_size * (np.array(range(rows)) - 0.5 * rows)
         object_points = np.stack([*np.meshgrid(x_array, y_array), np.zeros((rows, cols))], axis=-1)
 
-        print("create_detection", flush=True)
         detection = ChessBoardDetection(
             height=h,
             width=w,
@@ -175,5 +166,4 @@ class ChessBoardDetector(BoardDetector):
             object_points=object_points,
             image_points=image_points,
         )
-        print("detection result emit", flush=True)
         self.detection_results_signal.emit(img, detection, stamp)
