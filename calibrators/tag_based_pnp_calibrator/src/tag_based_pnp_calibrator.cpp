@@ -16,6 +16,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <rclcpp/time.hpp>
+#include <tag_based_pnp_calibrator/math.hpp>
 #include <tag_based_pnp_calibrator/tag_based_pnp_calibrator.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 
@@ -304,16 +305,28 @@ void ExtrinsicTagBasedPNPCalibrator::requestReceivedCallback(
     }
   }
 
-  tf2::Transform optical_axis_to_lidar_tf2 = estimator_.getFilteredPoseAsTF();
+  auto [use_filtered, crossval_reprojection_error] =
+    estimator_.getCrossValidationReprojectionError();
+
+  tf2::Transform optical_axis_to_lidar_tf2;
+
+  if (use_filtered) {
+    optical_axis_to_lidar_tf2 = estimator_.getFilteredPoseAsTF();
+  } else {
+    optical_axis_to_lidar_tf2 = estimator_.getCurrentPoseAsTF();
+  }
+
+  std::stringstream message_ss;
+  message_ss << "Calibrated using " << estimator_.getCurrentCalibrationPairsNumber() << " pairs "
+             << "(using " << (use_filtered ? "filtered" : "current") << " observations)";
 
   geometry_msgs::msg::Transform transform_msg;
   transform_msg = tf2::toMsg(optical_axis_to_lidar_tf2);
 
   tier4_calibration_msgs::msg::CalibrationResult result;
   result.success = true;
-  result.score = estimator_.getCrossValidationReprojectionError();
-  result.message.data =
-    "Calibrated using " + std::to_string(estimator_.getCurrentCalibrationPairsNumber()) + " pairs";
+  result.score = crossval_reprojection_error;
+  result.message.data = message_ss.str();
   result.transform_stamped.transform = tf2::toMsg(optical_axis_to_lidar_tf2);
   result.transform_stamped.header.frame_id = optical_frame_;
   result.transform_stamped.child_frame_id = lidar_frame_;
@@ -400,54 +413,44 @@ void ExtrinsicTagBasedPNPCalibrator::automaticCalibrationTimerCallback()
     cv::eigen2cv(initial_translation_eigen, initial_trans_vector);
 
     // Calculate the reprojection errors
-    cv::Matx31d initial_rvec, current_rvec, filtered_rvec;
-
-    cv::Rodrigues(initial_rotation_matrix, initial_rvec);
+    cv::Matx31d current_rvec;
     cv::Rodrigues(current_rotation_matrix, current_rvec);
-    cv::Rodrigues(filtered_rotation_matrix, filtered_rvec);
 
     visualizer_->setCameraLidarTransform(filtered_trans_vector, filtered_rotation_matrix);
-
-    std::vector<cv::Point2d> current_projected_points, initial_projected_points,
-      filtered_projected_points;
 
     auto camera_intrinsics = pinhole_camera_model_.intrinsicMatrix();
     auto distortion_coeffs = pinhole_camera_model_.distortionCoeffs();
 
     // Obtain the calibration points
-    auto [object_points, image_points] = estimator_.getCalibrationPoints(false);
+    auto [current_object_points, current_image_points] = estimator_.getCalibrationPoints(false);
+    auto [filtered_object_points, filtered_image_points] = estimator_.getCalibrationPoints(true);
 
-    if (object_points.size() == 0 || image_points.size() == 0) {
+    if (current_object_points.size() == 0 || current_image_points.size() == 0) {
       RCLCPP_ERROR(this->get_logger(), "Could not get the calibration points");
       return;
     }
 
-    cv::projectPoints(
-      object_points, initial_rvec, initial_trans_vector, camera_intrinsics, distortion_coeffs,
-      initial_projected_points);
+    double initial_reprojection_error = 0.f;
+    double current_reprojection_error = getReprojectionError(
+      current_object_points, current_image_points, current_trans_vector, current_rotation_matrix,
+      camera_intrinsics, distortion_coeffs);
+    double filtered_reprojection_error = getReprojectionError(
+      filtered_object_points, filtered_image_points, filtered_trans_vector,
+      filtered_rotation_matrix, camera_intrinsics, distortion_coeffs);
 
-    cv::projectPoints(
-      object_points, current_rvec, current_trans_vector, camera_intrinsics, distortion_coeffs,
-      current_projected_points);
+    if (current_reprojection_error < filtered_reprojection_error) {
+      initial_reprojection_error = getReprojectionError(
+        current_object_points, current_image_points, initial_trans_vector, initial_rotation_matrix,
+        camera_intrinsics, distortion_coeffs);
 
-    cv::projectPoints(
-      object_points, filtered_rvec, filtered_trans_vector, camera_intrinsics, distortion_coeffs,
-      filtered_projected_points);
+      publishCalibrationPoints(current_object_points, current_image_points);
+    } else {
+      initial_reprojection_error = getReprojectionError(
+        filtered_object_points, filtered_image_points, initial_trans_vector,
+        initial_rotation_matrix, camera_intrinsics, distortion_coeffs);
 
-    auto reprojection_error = [](auto & points1, auto & points2) -> double {
-      double error = 0.0;
-
-      for (std::size_t i = 0; i < points1.size(); i++) {
-        error += cv::norm(points1[i] - points2[i]);
-      }
-
-      return error / points1.size();
-    };
-
-    double initial_reprojection_error = reprojection_error(image_points, initial_projected_points);
-    double current_reprojection_error = reprojection_error(image_points, current_projected_points);
-    double filtered_reprojection_error =
-      reprojection_error(image_points, filtered_projected_points);
+      publishCalibrationPoints(filtered_object_points, filtered_image_points);
+    }
 
     RCLCPP_INFO(
       this->get_logger(),
@@ -459,9 +462,6 @@ void ExtrinsicTagBasedPNPCalibrator::automaticCalibrationTimerCallback()
       this->get_logger(), "\tCurrent reprojection error=%.2f", current_reprojection_error);
     RCLCPP_INFO(
       this->get_logger(), "\tFiltered reprojection error=%.2f", filtered_reprojection_error);
-
-    // Publish calibration points
-    publishCalibrationPoints(object_points, image_points);
   }
 
   visualizer_->drawCalibrationStatus(estimator_, latest_timestamp_);

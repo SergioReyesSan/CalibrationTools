@@ -18,6 +18,7 @@
 #include <opencv2/imgproc.hpp>
 #include <tag_based_pnp_calibrator/brute_force_matcher.hpp>
 #include <tag_based_pnp_calibrator/calibration_estimator.hpp>
+#include <tag_based_pnp_calibrator/math.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 
 #include <pcl/point_types.h>
@@ -50,7 +51,6 @@ CalibrationEstimator::CalibrationEstimator()
   apriltag_new_hypothesis_translation_(10.0),
   apriltag_process_noise_translation_(0.5),
   apriltag_measurement_noise_translation_(2.0),
-  crossvalidation_reprojection_error_(std::numeric_limits<double>::infinity()),
   valid_(false)
 {
 }
@@ -467,13 +467,12 @@ bool CalibrationEstimator::calibrate()
     hypothesis_rotation_matrix_ = hypothesis_rotation_matrix;
   }
 
-  computeCrossValidationReprojectionError(estimated_object_points, estimated_image_points);
-
   return status;
 }
 
 std::tuple<bool, cv::Matx31d, cv::Matx33d> CalibrationEstimator::calibrate(
-  const std::vector<cv::Point3d> & object_points, const std::vector<cv::Point2d> & image_points)
+  const std::vector<cv::Point3d> & object_points,
+  const std::vector<cv::Point2d> & image_points) const
 {
   cv::Matx31d translation_vector;
   cv::Matx33d rotation_matrix;
@@ -487,19 +486,36 @@ std::tuple<bool, cv::Matx31d, cv::Matx33d> CalibrationEstimator::calibrate(
   auto camera_intrinsics = pinhole_camera_model_.intrinsicMatrix();
   auto distortion_coeffs = pinhole_camera_model_.distortionCoeffs();
 
-  cv::Mat rvec, tvec;
+  cv::Matx31d sq_tvec, iterative_tvec;
+  cv::Matx31d sq_rvec, iterative_rvec;
 
-  bool success = cv::solvePnP(
-    object_points, image_points, camera_intrinsics, distortion_coeffs, rvec, tvec, false,
+  bool sq_success = cv::solvePnP(
+    object_points, image_points, camera_intrinsics, distortion_coeffs, sq_rvec, sq_tvec, false,
     cv::SOLVEPNP_SQPNP);
 
-  if (!success) {
+  bool iterative_success = cv::solvePnP(
+    object_points, image_points, camera_intrinsics, distortion_coeffs, iterative_rvec,
+    iterative_tvec, false, cv::SOLVEPNP_ITERATIVE);
+
+  if (!sq_success && !iterative_success) {
     RCLCPP_ERROR(rclcpp::get_logger("calibration_estimator"), "PNP failed");
     return std::tuple<bool, cv::Matx31d, cv::Matx33d>(false, translation_vector, rotation_matrix);
   }
 
-  translation_vector = tvec;
-  cv::Rodrigues(rvec, rotation_matrix);
+  double sq_error = getReprojectionError(
+    object_points, image_points, sq_tvec, sq_rvec, camera_intrinsics, distortion_coeffs);
+
+  double iterative_error = getReprojectionError(
+    object_points, image_points, iterative_tvec, iterative_rvec, camera_intrinsics,
+    distortion_coeffs);
+
+  if (sq_error < iterative_error) {
+    translation_vector = sq_tvec;
+    cv::Rodrigues(sq_rvec, rotation_matrix);
+  } else {
+    translation_vector = iterative_tvec;
+    cv::Rodrigues(iterative_rvec, rotation_matrix);
+  }
 
   return std::tuple<bool, cv::Matx31d, cv::Matx33d>(true, translation_vector, rotation_matrix);
 }
@@ -519,7 +535,7 @@ tf2::Transform CalibrationEstimator::toTf2(
   return tf2::Transform(tf2_rotation_matrix, tf2_trans);
 }
 
-void CalibrationEstimator::computeCrossValidationReprojectionError(
+double CalibrationEstimator::computeCrossValidationReprojectionError(
   const std::vector<cv::Point3d> & object_points, const std::vector<cv::Point2d> & image_points)
 {
   // Iterate a number of times
@@ -535,8 +551,11 @@ void CalibrationEstimator::computeCrossValidationReprojectionError(
   std::size_t training_size = crossvalidation_training_ratio_ * object_points.size();
 
   if (static_cast<int>(training_size) < min_pnp_pairs_) {
-    return;
+    return std::numeric_limits<double>::infinity();
   }
+
+  const auto & camera_matrix = pinhole_camera_model_.intrinsicMatrix();
+  const auto & distortion_coeffs = pinhole_camera_model_.distortionCoeffs();
 
   double error = 0.0;
 
@@ -561,25 +580,35 @@ void CalibrationEstimator::computeCrossValidationReprojectionError(
     [[maybe_unused]] auto [status, iter_translation_vector, iter_rotation_matrix] =
       calibrate(training_object_points, training_image_points);
 
+    double reprojection_error = getReprojectionError(
+      test_object_points, test_image_points, iter_translation_vector, iter_rotation_matrix,
+      camera_matrix, distortion_coeffs);
+
     cv::Matx31d iter_rvec;
     cv::Rodrigues(iter_rotation_matrix, iter_rvec);
 
-    cv::projectPoints(
-      test_object_points, iter_rvec, iter_translation_vector,
-      pinhole_camera_model_.intrinsicMatrix(), pinhole_camera_model_.distortionCoeffs(),
-      eval_projected_points);
-
-    double reprojection_error = 0.0;
-    for (std::size_t i = 0; i < test_image_points.size(); i++) {
-      double dist = cv::norm(test_image_points[i] - eval_projected_points[i]);
-      reprojection_error += dist;
-    }
-
-    reprojection_error /= test_image_points.size();
     error += reprojection_error;
   }
 
-  crossvalidation_reprojection_error_ = error / trials;
+  return error / trials;
+}
+
+std::tuple<bool, double> CalibrationEstimator::getCrossValidationReprojectionError()
+{
+  // Return the current or filtered pose depending on which fits their set better
+  auto [current_object_points, current_image_points] = getCalibrationPoints(false);
+  auto [filtered_object_points, filtered_image_points] = getCalibrationPoints(true);
+
+  double current_crossval_reprojection_error =
+    computeCrossValidationReprojectionError(current_object_points, current_image_points);
+  double filtered_crossval_reprojection_error =
+    computeCrossValidationReprojectionError(filtered_object_points, filtered_image_points);
+
+  if (current_crossval_reprojection_error < filtered_crossval_reprojection_error) {
+    return std::tuple<bool, double>(false, current_crossval_reprojection_error);
+  } else {
+    return std::tuple<bool, double>(true, filtered_crossval_reprojection_error);
+  }
 }
 
 bool CalibrationEstimator::converged() const
@@ -768,11 +797,6 @@ double CalibrationEstimator::getCalibrationCoveragePercentage() const
 int CalibrationEstimator::getCurrentCalibrationPairsNumber() const
 {
   return converged_lidartag_hypotheses_.size();
-}
-
-double CalibrationEstimator::getCrossValidationReprojectionError() const
-{
-  return crossvalidation_reprojection_error_;
 }
 
 int CalibrationEstimator::getConvergencePairNumber() const { return convergence_min_pairs_; }

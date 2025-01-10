@@ -58,7 +58,7 @@ public:
   void setBaseLidarTransform(
     const cv::Matx31d & translation_vector, const cv::Matx33d & rotation_matrix);
 
-  void drawCalibrationStatus(const CalibrationEstimator & estimation, rclcpp::Time & stamp);
+  void drawCalibrationStatus(CalibrationEstimator & estimation, rclcpp::Time & stamp);
 
   void drawAprilTagDetections(
     const apriltag_msgs::msg::AprilTagDetectionArray::SharedPtr & apriltag_detection_array);
@@ -86,7 +86,7 @@ private:
   void drawCalibrationZone(
     rclcpp::Time & stamp, visualization_msgs::msg::MarkerArray & marker_array);
   void drawCalibrationStatusText(
-    const CalibrationEstimator & estimator, rclcpp::Time & stamp,
+    CalibrationEstimator & estimator, rclcpp::Time & stamp,
     visualization_msgs::msg::MarkerArray & marker_array);
 
   std::vector<cv::Point3d> get3dpoints(apriltag_msgs::msg::AprilTagDetection & detection);

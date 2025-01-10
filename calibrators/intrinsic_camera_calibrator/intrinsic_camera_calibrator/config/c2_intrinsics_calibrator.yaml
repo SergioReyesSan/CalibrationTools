@@ -29,6 +29,11 @@ calibration_parameters:
   use_tangential_distortion: true
   pre_calibration_num_samples: 40
   regularization_weight: 0.2
+  enable_prism_model: false
+  fix_principal_point: false
+  fix_aspect_ratio: false
+  use_lu_decomposition: false
+  use_qr_decomposition: false
 
 calibrator_type: ceres
 

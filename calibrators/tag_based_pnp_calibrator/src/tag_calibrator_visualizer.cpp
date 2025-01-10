@@ -82,7 +82,7 @@ void TagCalibratorVisualizer::setBaseLidarTransform(
 }
 
 void TagCalibratorVisualizer::drawCalibrationStatus(
-  const CalibrationEstimator & estimator, rclcpp::Time & stamp)
+  CalibrationEstimator & estimator, rclcpp::Time & stamp)
 {
   visualization_msgs::msg::MarkerArray marker_array;
   circle_diameter_ = estimator.getNewHypothesisDistance();
@@ -374,7 +374,7 @@ void TagCalibratorVisualizer::drawCalibrationZone(
 }
 
 void TagCalibratorVisualizer::drawCalibrationStatusText(
-  const CalibrationEstimator & estimator, rclcpp::Time & stamp,
+  CalibrationEstimator & estimator, rclcpp::Time & stamp,
   visualization_msgs::msg::MarkerArray & marker_array)
 {
   if (!valid_base_lidar_transform_) {
@@ -406,11 +406,15 @@ void TagCalibratorVisualizer::drawCalibrationStatusText(
   text_marker.ns = "calibration_status";
   text_marker.scale.z = 0.3;
 
+  auto [use_filtered, crossval_reprojection_error] =
+    estimator.getCrossValidationReprojectionError();
+  std::string best_crossval_set = use_filtered ? "filtered" : "current";
+
   text_marker.text =
     "pairs=" + std::to_string(estimator.getCurrentCalibrationPairsNumber()) +
     "\ncoverage=" + to_string_with_precision(estimator.getCalibrationCoveragePercentage()) +
     "\ncrossvalidation_reprojection_error=" +
-    to_string_with_precision(estimator.getCrossValidationReprojectionError());
+    to_string_with_precision(crossval_reprojection_error) + " (" + best_crossval_set + ")";
 
   text_marker.pose.position.x = base_lidar_translation_vector(0);
   text_marker.pose.position.y = base_lidar_translation_vector(1);

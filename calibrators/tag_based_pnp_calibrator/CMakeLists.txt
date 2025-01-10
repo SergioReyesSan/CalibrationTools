@@ -18,6 +18,7 @@ ament_auto_add_executable(tag_based_pnp_calibrator
   src/tag_based_pnp_calibrator.cpp
   src/tag_calibrator_visualizer.cpp
   src/main.cpp
+  src/math.cpp
 )
 
 target_link_libraries(tag_based_pnp_calibrator

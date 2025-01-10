@@ -93,7 +93,9 @@ public:
   double getNewHypothesisDistance() const;
   double getCalibrationCoveragePercentage() const;
   int getCurrentCalibrationPairsNumber() const;
-  double getCrossValidationReprojectionError() const;
+  double computeCrossValidationReprojectionError(
+    const std::vector<cv::Point3d> & object_points, const std::vector<cv::Point2d> & image_points);
+  std::tuple<bool, double> getCrossValidationReprojectionError();
   int getConvergencePairNumber() const;
 
 private:
@@ -104,13 +106,11 @@ private:
     bool use_estimated);
 
   std::tuple<bool, cv::Matx31d, cv::Matx33d> calibrate(
-    const std::vector<cv::Point3d> & object_points, const std::vector<cv::Point2d> & image_points);
+    const std::vector<cv::Point3d> & object_points,
+    const std::vector<cv::Point2d> & image_points) const;
 
   tf2::Transform toTf2(
     const cv::Matx31d & translation_vector, const cv::Matx33d & rotation_matrix) const;
-
-  void computeCrossValidationReprojectionError(
-    const std::vector<cv::Point3d> & object_points, const std::vector<cv::Point2d> & image_points);
 
   // Parameters
 
@@ -160,7 +160,6 @@ private:
   std::vector<std::shared_ptr<tier4_tag_utils::ApriltagHypothesis>> converged_apriltag_hypotheses_;
 
   // Output
-  double crossvalidation_reprojection_error_;
   bool valid_;
   cv::Matx33d hypothesis_rotation_matrix_, observation_rotation_matrix_;
   cv::Matx31d hypothesis_translation_vector_, observation_translation_vector_;
