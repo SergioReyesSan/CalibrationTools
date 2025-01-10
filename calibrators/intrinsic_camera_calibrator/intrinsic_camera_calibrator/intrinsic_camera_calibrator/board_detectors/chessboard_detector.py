@@ -62,8 +62,8 @@ class ChessBoardDetector(BoardDetector):
             resized_detection = self.resized_detection.value
             resized_max_resolution = self.resized_max_resolution.value
 
-        def get_roi(corners, frame_shape, padding=120):
-            """Region to keep track of the chessboard in the next frame"""
+        def get_roi(corners, frame_shape, padding = 120):
+            # Region to keep track of the chessboard in the next frame
             x_min, y_min = np.min(corners, axis=0).ravel().astype(int) - padding
             x_max, y_max = np.max(corners, axis=0).ravel().astype(int) + padding
             x_min, y_min = max(0, x_min), max(0, y_min)
