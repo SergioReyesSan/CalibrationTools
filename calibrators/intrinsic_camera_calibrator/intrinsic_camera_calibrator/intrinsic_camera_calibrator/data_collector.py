@@ -22,11 +22,11 @@ from typing import Tuple
 from PySide2.QtCore import Signal
 from intrinsic_camera_calibrator.board_detections.board_detection import BoardDetection
 from intrinsic_camera_calibrator.camera_models.camera_model import CameraModel
+from intrinsic_camera_calibrator.data_sources.data_source import DataSourceEnum
 from intrinsic_camera_calibrator.parameter import Parameter
 from intrinsic_camera_calibrator.parameter import ParameterizedClass
 from intrinsic_camera_calibrator.types import CollectionStatus
 from intrinsic_camera_calibrator.types import OperationMode
-from intrinsic_camera_calibrator.data_sources.data_source import DataSourceEnum
 import numpy as np
 
 
@@ -258,7 +258,9 @@ class DataCollector(ParameterizedClass):
         self.point_2d_hist_bins = Parameter(int, value=20, min_value=2, max_value=100)
         self.point_3d_hist_bins = Parameter(int, value=20, min_value=2, max_value=100)
 
-        self.skip_frames_when_not_detection = Parameter(bool, value=True, min_value=False, max_value=True)
+        self.skip_frames_when_not_detection = Parameter(
+            bool, value=True, min_value=False, max_value=True
+        )
 
         self.set_parameters(**cfg)
 
@@ -527,7 +529,9 @@ class DataCollector(ParameterizedClass):
         # process detections without filtering, only to get linearity heatmap
         self.update_linearity_heatmap(self.linearity_heatmap, detection)
 
-        if self.filter_by_speed.value and source_type != DataSourceEnum.FILES: # remove speed filter if we ar using images
+        if (
+            self.filter_by_speed.value and source_type != DataSourceEnum.FILES
+        ):  # remove speed filter if we ar using images
             speed = 0 if self.last_detection is None else detection.get_speed(self.last_detection)
             self.last_detection = detection
 

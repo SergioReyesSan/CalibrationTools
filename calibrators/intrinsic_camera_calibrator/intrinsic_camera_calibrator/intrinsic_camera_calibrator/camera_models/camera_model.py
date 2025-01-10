@@ -155,8 +155,8 @@ class CameraModel:
         projected_points = projected_points.reshape((num_points, 2))
         return projected_points - image_points
 
-    def as_dict(self, alpha: float = 0.0, rectify_option = 0) -> Dict:
-        undistorted = self.get_undistorted_camera_model(alpha,rectify_option=rectify_option)
+    def as_dict(self, alpha: float = 0.0, rectify_option=0) -> Dict:
+        undistorted = self.get_undistorted_camera_model(alpha, rectify_option=rectify_option)
         p = np.zeros((3, 4))
         p[0:3, 0:3] = undistorted.k
 
@@ -171,7 +171,7 @@ class CameraModel:
         }
         distortion_model_used = "plumb_bob"
         if self.d.size > 5:
-            distortion_model_used = "rational_polynomial" 
+            distortion_model_used = "rational_polynomial"
         d["distortion_model"] = distortion_model_used
         d["distortion_coefficients"] = {
             "rows": 1,
@@ -212,6 +212,7 @@ class CameraModel:
     def get_undistorted_camera_model(self, alpha: float, rectify_option):
         """Compute the undistorted version of the camera model."""
         if rectify_option == 1:
+
             def get_rectangles(camera_matrix, dist_coeffs, img_size, new_camera_matrix=None):
                 N = 101
                 # Generate grid points
@@ -219,11 +220,16 @@ class CameraModel:
                 k = 0
                 for y in range(N):
                     for x in range(N):
-                        pts[0, k] = [(x * (img_size[0] - 1)) / (N - 1), (y * (img_size[1] - 1)) / (N - 1)]
+                        pts[0, k] = [
+                            (x * (img_size[0] - 1)) / (N - 1),
+                            (y * (img_size[1] - 1)) / (N - 1),
+                        ]
                         k += 1
 
                 # Undistort points
-                undistorted_pts = cv2.undistortPoints(pts, camera_matrix, dist_coeffs, P=new_camera_matrix)
+                undistorted_pts = cv2.undistortPoints(
+                    pts, camera_matrix, dist_coeffs, P=new_camera_matrix
+                )
                 undistorted_pts = undistorted_pts.reshape(-1, 2)
 
                 # Initialize variables for inscribed and outer rectangle
@@ -258,6 +264,7 @@ class CameraModel:
                 outer = (oX0, oY0, oX1 - oX0, oY1 - oY0)
 
                 return inner, outer
+
             size = (self.width, self.height)
             (image_width, image_height) = size
             camera_matrix = self.k
@@ -273,7 +280,7 @@ class CameraModel:
 
                 new_image_width = image_width
                 new_image_height = image_height
-                
+
                 if force_aspect_ratio:
                     # we want to make sure that fx = fy while also making sure all the roi is valid
                     if fx * roi[3] < image_height - 1:
@@ -295,13 +302,18 @@ class CameraModel:
                 outer_intrinsics, new_image_size = roi_to_intrinsics(outer)
                 new_intrinsics = inner_intrinsics * (1.0 - alpha) + outer_intrinsics * alpha
 
-            roi, _ = get_rectangles(camera_matrix, distortion_coefficients, size, new_camera_matrix=new_intrinsics)
+            roi, _ = get_rectangles(
+                camera_matrix, distortion_coefficients, size, new_camera_matrix=new_intrinsics
+            )
             roi = list(roi)
 
             new_image_width, new_image_height = new_image_size
 
             return type(self)(
-                k=new_intrinsics, d=np.zeros_like(self.d), height=new_image_height, width=new_image_width
+                k=new_intrinsics,
+                d=np.zeros_like(self.d),
+                height=new_image_height,
+                width=new_image_width,
             )
         elif rectify_option == 0:
             undistorted_k, _ = cv2.getOptimalNewCameraMatrix(
@@ -319,7 +331,9 @@ class CameraModel:
 
         if self._cached_undistorted_model is None or alpha != self._cached_undistortion_alpha:
             self._cached_undistortion_alpha = alpha
-            self._cached_undistorted_model = self.get_undistorted_camera_model(alpha=alpha, rectify_option=rectify_option)
+            self._cached_undistorted_model = self.get_undistorted_camera_model(
+                alpha=alpha, rectify_option=rectify_option
+            )
             (
                 self._cached_undistortion_map_x,
                 self._cached_undistortion_map_y,

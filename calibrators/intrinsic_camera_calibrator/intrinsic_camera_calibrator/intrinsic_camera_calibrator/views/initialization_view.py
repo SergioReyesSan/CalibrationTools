@@ -225,6 +225,7 @@ class InitializationView(QWidget):
         """Start the calibration process after receiving the user settings."""
 
         source_type = self.data_source_combobox.currentData()
+
         def on_success():
             """Handle the successful initialization of the data source."""
             mode = (

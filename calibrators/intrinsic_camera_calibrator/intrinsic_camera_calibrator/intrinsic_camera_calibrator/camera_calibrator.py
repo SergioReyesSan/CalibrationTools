@@ -928,7 +928,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.undistortion_alpha_spinbox.value(),
             self.data_source.get_camera_name(),
             os.path.join(output_folder, f"{self.data_source.get_camera_name()}_info.yaml"),
-            self.rectify_type_combobox.currentData()
+            self.rectify_type_combobox.currentData(),
         )
 
         self.save_parameters(os.path.join(output_folder, "parameters.yaml"))
@@ -1012,7 +1012,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 alpha_indicators=self.indicators_alpha_spinbox.value(),
                 value=False,
             )
-            self.skip_next_img = 5 # skips the next images if there are no detections
+            self.skip_next_img = 5  # skips the next images if there are no detections
 
         else:
             camera_model_cfg, camera_model_type = self.calibrator_dict[
@@ -1259,8 +1259,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         elif self.image_view_type_combobox.currentData() == ImageViewMode.SOURCE_RECTIFIED:
             assert self.calibrated_camera_model is not None
             img = self.calibrated_camera_model.rectify(
-                self.unprocessed_image, self.undistortion_alpha_spinbox.value(),
-                self.rectify_type_combobox.currentData()
+                self.unprocessed_image,
+                self.undistortion_alpha_spinbox.value(),
+                self.rectify_type_combobox.currentData(),
             )
         else:
             raise NotImplementedError
@@ -1286,14 +1287,18 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
     def process_new_data(self):
         """Attempt to request the detector to process an image. However, if it there is an image being processed, does not enqueue them indefinitely. Instead, only leave the last one."""
         # if was not found the pattern skip some frames
-        if self.data_collector.skip_frames_when_not_detection.value and self.skip_next_img > 1 and self.data_source_type != DataSourceEnum.FILES:
-            self.detector.restart_lost_frames_counter() # to force next frame detection
+        if (
+            self.data_collector.skip_frames_when_not_detection.value
+            and self.skip_next_img > 1
+            and self.data_source_type != DataSourceEnum.FILES
+        ):
+            self.detector.restart_lost_frames_counter()  # to force next frame detection
             self.skip_next_img -= 1
             self.consumed_data_signal.emit()
             return
-        
+
         if self.data_source_type == DataSourceEnum.FILES:
-            self.detector.restart_lost_frames_counter() # to force next frame detection
+            self.detector.restart_lost_frames_counter()  # to force next frame detection
 
         if self.paused:
             return
