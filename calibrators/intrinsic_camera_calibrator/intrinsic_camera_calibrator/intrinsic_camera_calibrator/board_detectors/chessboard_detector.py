@@ -157,8 +157,8 @@ class ChessBoardDetector(BoardDetector):
 
             try:
                 corners = cv2.cornerSubPix(grayscale, corners, (radius, radius), (-1, -1), criteria)
-            except:
-                logging.error("Corner subpixel refinement window was small or zero")
+            except Exception as e:
+                logging.error(e)
 
         image_points = corners.reshape((rows, cols, 2))
         x_array = cell_size * (np.array(range(cols)) - 0.5 * cols)

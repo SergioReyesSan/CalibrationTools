@@ -15,7 +15,6 @@
 # limitations under the License.
 
 from typing import List
-from typing import Tuple
 
 from PySide2.QtCore import QObject
 from PySide2.QtCore import QPointF
