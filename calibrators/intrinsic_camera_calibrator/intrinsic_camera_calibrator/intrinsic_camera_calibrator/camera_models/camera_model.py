@@ -167,7 +167,7 @@ class CameraModel:
         d["camera_matrix"] = {
             "rows": 3,
             "cols": 3,
-            "data": [round(e.item(), 10) for e in self.k.flatten()],
+            "data": [round(e.item(), 11) for e in self.k.flatten()],
         }
         distortion_model_used = "plumb_bob"
         if self.d.size > 5:
@@ -176,17 +176,17 @@ class CameraModel:
         d["distortion_coefficients"] = {
             "rows": 1,
             "cols": int(self.d.size),
-            "data": [round(e.item(), 10) for e in self.d.flatten()],
+            "data": [round(e.item(), 11) for e in self.d.flatten()],
         }
         d["projection_matrix"] = {
             "rows": 3,
             "cols": 4,
-            "data": [round(e.item(), 10) for e in p.flatten()],
+            "data": [round(e.item(), 11) for e in p.flatten()],
         }
         d["rectification_matrix"] = {
             "rows": 3,
             "cols": 3,
-            "data": [round(e.item(), 10) for e in np.eye(3).flatten()],
+            "data": [round(e.item(), 11) for e in np.eye(3).flatten()],
         }
 
         return d
