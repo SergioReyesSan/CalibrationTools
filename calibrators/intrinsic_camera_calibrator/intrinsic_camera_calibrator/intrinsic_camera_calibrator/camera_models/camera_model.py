@@ -155,7 +155,7 @@ class CameraModel:
         projected_points = projected_points.reshape((num_points, 2))
         return projected_points - image_points
 
-    def as_dict(self, alpha: float = 0.0, rectify_option=0) -> Dict:
+    def as_dict(self, alpha: float=0.0, rectify_option=0) -> Dict:
         undistorted = self.get_undistorted_camera_model(alpha, rectify_option=rectify_option)
         p = np.zeros((3, 4))
         p[0:3, 0:3] = undistorted.k
