@@ -355,6 +355,10 @@ class CameraModel:
     def _update_config_impl(self, **kwargs):
         """Abstract method to update the camera model configuration."""
         raise NotImplementedError
+    
+    def restart_camera_cached_model(self):
+        """Restarts the current cached camera model"""
+        self._cached_undistorted_model = None
 
 
 class CameraModelWithBoardDistortion(CameraModel):

@@ -233,7 +233,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.process_db_data(img)
 
         def on_rectify_type_change(index):
-            self.calibrated_camera_model._cached_undistorted_model = None
+            self.calibrated_camera_model.restart_camera_cached_model()
 
         self.pause_button.clicked.connect(pause_callback)
         self.image_view_type_combobox.currentIndexChanged.connect(on_image_view_type_change)
