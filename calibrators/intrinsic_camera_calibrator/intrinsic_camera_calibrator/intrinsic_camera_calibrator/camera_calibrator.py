@@ -1275,6 +1275,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.pending_detection_request = False
         self.pending_detection_result = True
         self.detection_request_time = time.time()
+        # cSpell:ignore knzo
         with self.lock:  # note(knzo25): this is probably unnecessary, but we are tracking a bug
             self.request_image_detection.emit(img, stamp)
 

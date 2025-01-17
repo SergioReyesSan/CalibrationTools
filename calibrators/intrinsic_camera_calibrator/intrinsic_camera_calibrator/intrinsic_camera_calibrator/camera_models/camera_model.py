@@ -357,7 +357,7 @@ class CameraModel:
         raise NotImplementedError
 
     def restart_camera_cached_model(self):
-        """Restarts the current cached camera model"""
+        """Restarts the current cached camera model."""
         self._cached_undistorted_model = None
 
 
