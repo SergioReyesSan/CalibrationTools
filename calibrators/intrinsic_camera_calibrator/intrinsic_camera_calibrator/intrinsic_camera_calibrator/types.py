@@ -43,6 +43,7 @@ class CollectionStatus(Enum):
     REDUNDANT = 3
     ACCEPTED = 4
 
+
 class RectifyMode(Enum):
     """Methods to rectify the image."""
 

@@ -172,7 +172,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.rectify_label = QLabel("Rectify option:")
         self.rectify_type_combobox = QComboBox()
         self.rectify_type_combobox.addItem(RectifyMode.OPENCV.value, RectifyMode.OPENCV)
-        self.rectify_type_combobox.addItem(RectifyMode.FIXED_ASPECT_RATIO.value, RectifyMode.FIXED_ASPECT_RATIO)
+        self.rectify_type_combobox.addItem(
+            RectifyMode.FIXED_ASPECT_RATIO.value, RectifyMode.FIXED_ASPECT_RATIO
+        )
         self.rectify_type_combobox.setEnabled(False)
 
         def pause_callback():

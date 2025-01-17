@@ -19,9 +19,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-from intrinsic_camera_calibrator.types import RectifyMode
 
 import cv2
+from intrinsic_camera_calibrator.types import RectifyMode
 import numpy as np
 
 
