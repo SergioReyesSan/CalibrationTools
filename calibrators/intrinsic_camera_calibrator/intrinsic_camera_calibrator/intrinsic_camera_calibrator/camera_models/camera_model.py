@@ -19,6 +19,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from intrinsic_camera_calibrator.types import RectifyMode
 
 import cv2
 import numpy as np
@@ -211,7 +212,7 @@ class CameraModel:
 
     def get_undistorted_camera_model(self, alpha: float, rectify_option):
         """Compute the undistorted version of the camera model."""
-        if rectify_option == 1:
+        if rectify_option == RectifyMode.FIXED_ASPECT_RATIO:
 
             def get_rectangles(camera_matrix, dist_coeffs, img_size, new_camera_matrix=None):
                 N = 101
@@ -315,7 +316,7 @@ class CameraModel:
                 height=new_image_height,
                 width=new_image_width,
             )
-        elif rectify_option == 0:
+        elif rectify_option == RectifyMode.OPENCV:
             undistorted_k, _ = cv2.getOptimalNewCameraMatrix(
                 self.k, self.d, (self.width, self.height), alpha
             )

@@ -62,6 +62,7 @@ from intrinsic_camera_calibrator.parameter import Parameter
 from intrinsic_camera_calibrator.parameter import ParameterizedClass
 from intrinsic_camera_calibrator.types import ImageViewMode
 from intrinsic_camera_calibrator.types import OperationMode
+from intrinsic_camera_calibrator.types import RectifyMode
 from intrinsic_camera_calibrator.utils import save_intrinsics
 from intrinsic_camera_calibrator.utils import set_logger_severity
 from intrinsic_camera_calibrator.views.data_collector_view import DataCollectorView
@@ -170,8 +171,8 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
         self.rectify_label = QLabel("Rectify option:")
         self.rectify_type_combobox = QComboBox()
-        self.rectify_type_combobox.addItem("OpenCV", 0)
-        self.rectify_type_combobox.addItem("Fixed aspect ratio", 1)
+        self.rectify_type_combobox.addItem(RectifyMode.OPENCV.value, RectifyMode.OPENCV)
+        self.rectify_type_combobox.addItem(RectifyMode.FIXED_ASPECT_RATIO.value, RectifyMode.FIXED_ASPECT_RATIO)
         self.rectify_type_combobox.setEnabled(False)
 
         def pause_callback():
