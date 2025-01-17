@@ -169,7 +169,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
 
         self.rectify_label = QLabel("Rectify option:")
         self.rectify_type_combobox = QComboBox()
-        self.rectify_type_combobox.addItem("Opencv", 0)
+        self.rectify_type_combobox.addItem("OpenCV", 0)
         self.rectify_type_combobox.addItem("Fixed aspect ratio", 1)
         self.rectify_type_combobox.setEnabled(False)
 
