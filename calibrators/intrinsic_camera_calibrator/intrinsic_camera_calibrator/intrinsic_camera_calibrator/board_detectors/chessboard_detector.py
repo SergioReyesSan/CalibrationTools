@@ -35,13 +35,14 @@ class ChessBoardDetector(BoardDetector):
         self.resized_detection = Parameter(bool, value=True, min_value=False, max_value=True)
         self.resized_max_resolution = Parameter(int, value=1000, min_value=500, max_value=3000)
         self.sub_pixel_refinement = Parameter(bool, value=True, min_value=False, max_value=True)
+        self.max_lost_frames = Parameter(int, value=3, min_value=0, max_value=15)
+        self.padding = Parameter(int, value=120, min_value=10, max_value=500)
         self.set_parameters(**kwargs["cfg"])
         self.roi = None
         self.lost_frames = 0
-        self.max_lost_frames = 3
 
     def restart_lost_frames_counter(self):
-        self.lost_frames = self.max_lost_frames
+        self.lost_frames = self.max_lost_frames.value
 
     def detect(self, img: np.array, stamp: float):
         """Slot to detect boards from an image. Results are sent through the detection_results signals."""
@@ -62,7 +63,7 @@ class ChessBoardDetector(BoardDetector):
             resized_detection = self.resized_detection.value
             resized_max_resolution = self.resized_max_resolution.value
 
-        def get_roi(corners, frame_shape, padding=120):
+        def get_roi(corners, frame_shape, padding=self.padding.value):
             # Region to keep track of the chessboard in the next frame
             x_min, y_min = np.min(corners, axis=0).ravel().astype(int) - padding
             x_max, y_max = np.max(corners, axis=0).ravel().astype(int) + padding
@@ -73,7 +74,7 @@ class ChessBoardDetector(BoardDetector):
         h, w = img.shape[0:2]
         grayscale = to_grayscale(img)
         if not resized_detection or max(h, w) <= resized_max_resolution:
-            if self.roi is None or self.lost_frames >= self.max_lost_frames:
+            if self.roi is None or self.lost_frames >= self.max_lost_frames.value:
                 (detected, corners) = cv2.findChessboardCorners(
                     grayscale, (cols, rows), flags=flags
                 )
