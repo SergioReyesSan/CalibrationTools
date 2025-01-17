@@ -68,6 +68,7 @@ from intrinsic_camera_calibrator.views.image_view import CustomQGraphicsView
 from intrinsic_camera_calibrator.views.image_view import ImageView
 from intrinsic_camera_calibrator.views.initialization_view import InitializationView
 from intrinsic_camera_calibrator.views.parameter_view import ParameterView
+from intrinsic_camera_calibrator.parameter import Parameter
 import numpy as np
 import rclpy
 import yaml
@@ -124,8 +125,8 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.image_view_mode = ImageViewMode.SOURCE_UNRECTIFIED
         self.paused = False
         self.last_detection = None
+        self.frames_to_skip = Parameter(int, value=5, min_value=0, max_value=100)
         self.skip_next_img = 0
-
         self.initialization_view = InitializationView(self, cfg)
 
     def make_image_view(self):
@@ -1012,7 +1013,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 alpha_indicators=self.indicators_alpha_spinbox.value(),
                 value=False,
             )
-            self.skip_next_img = 5  # skips the next images if there are no detections
+            self.skip_next_img = self.frames_to_skip.value  # skips the next images if there are no detections
 
         else:
             camera_model_cfg, camera_model_type = self.calibrator_dict[
