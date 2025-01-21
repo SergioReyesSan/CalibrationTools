@@ -19,6 +19,7 @@ import os
 
 import cv2
 from intrinsic_camera_calibrator.camera_models.camera_model import CameraModel
+from intrinsic_camera_calibrator.types import RectifyMode
 import numpy as np
 import ruamel.yaml
 import yaml

@@ -1016,9 +1016,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 alpha_indicators=self.indicators_alpha_spinbox.value(),
                 value=False,
             )
-            self.skip_next_img = (
-                self.frames_to_skip.value
-            )  # skips the next images if there are no detections
+            with self.lock:
+                self.skip_next_img = (
+                    self.frames_to_skip.value
+                )  # skips the next images if there are no detections
 
         else:
             camera_model_cfg, camera_model_type = self.calibrator_dict[
