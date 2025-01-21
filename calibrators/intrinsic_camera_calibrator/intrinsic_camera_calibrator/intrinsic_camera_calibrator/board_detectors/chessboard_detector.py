@@ -73,8 +73,8 @@ class ChessBoardDetector(BoardDetector):
             x_min, y_min = max(0, x_min), max(0, y_min)
             x_max, y_max = min(frame_shape[1], x_max), min(frame_shape[0], y_max)
             return (x_min, y_min, x_max, y_max)
-        
-        def calculate_new_size(w,h):
+
+        def calculate_new_size(w, h):
             # Find the resized dimensions
             ratio = float(w) / float(h)
 
@@ -86,7 +86,7 @@ class ChessBoardDetector(BoardDetector):
                 resized_h = int(resized_max_resolution)
 
             return resized_w, resized_h
-        
+
         def do_corner_sub_pix(corners):
             dist_matrix = np.linalg.norm(
                 corners.reshape(-1, 1, 2) - corners.reshape(1, -1, 2), axis=-1
@@ -103,7 +103,7 @@ class ChessBoardDetector(BoardDetector):
                 corners = cv2.cornerSubPix(grayscale, corners, (radius, radius), (-1, -1), criteria)
             except Exception as e:
                 logging.error(e)
-            
+
             return corners
 
         h, w = img.shape[0:2]
@@ -135,7 +135,7 @@ class ChessBoardDetector(BoardDetector):
                     self.detection_results_signal.emit(img, None, stamp)
                     return
         else:
-            resized_w, resized_h = calculate_new_size(w,h)
+            resized_w, resized_h = calculate_new_size(w, h)
 
             # Resize
             resized = cv2.resize(grayscale, (resized_w, resized_h), interpolation=cv2.INTER_NEAREST)
