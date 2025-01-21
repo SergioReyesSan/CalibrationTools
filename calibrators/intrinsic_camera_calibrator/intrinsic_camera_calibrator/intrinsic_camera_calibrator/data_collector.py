@@ -531,7 +531,7 @@ class DataCollector(ParameterizedClass):
 
         if (
             self.filter_by_speed.value and source_type != DataSourceEnum.FILES
-        ):  # remove speed filter if we ar using images
+        ):  # remove the speed filter if we are calibrating from image files
             speed = 0 if self.last_detection is None else detection.get_speed(self.last_detection)
             self.last_detection = detection
 
