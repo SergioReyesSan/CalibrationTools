@@ -330,3 +330,44 @@ def plot_calibration_results_statistics(
     plot_calibration_vs_single_shot_calibration(2, "Evaluation", evaluation_detections)
 
     plt.show()
+
+def plot_distortion(d, width, height):
+    fig, axes = plt.subplots(3, 1, figsize=(20, 12))
+    fig.canvas.set_window_title("Distortion profile")
+    k1, k2, p1, p2, k3, k4, k5, k6 = d[0]
+
+    out_of_fov_mul_factor = 10.0  # 1.0 for real image size, larger value shows what happens outside of the image FOV
+    steps = np.arange(0.0, out_of_fov_mul_factor, 0.001)
+
+    x = (width / 2 / max(width, height)) * steps
+    y = (height / 2 / max(width, height)) * steps
+
+    r = np.sqrt(x**2 + y**2)
+    r2 = r**2
+    r4 = r2**2
+    r6 = r2 * r4
+    
+    numerator = (1 + k1 * r2 + k2 * r4 + k3 * r6)
+    denominator = (1 + k4 * r2 + k5 * r4 + k6 * r6)
+    radial_distortion = numerator / denominator
+    distortion_x = x * radial_distortion
+
+    axes[0].set_title(f"Radial distortion curve")
+    axes[1].set_title(f"Numerator")
+    axes[2].set_title(f"Denominator")
+    axes[0].plot(steps,
+                  distortion_x, 
+                  label="Radial distortion curve",
+                  )
+
+    axes[1].plot(steps, 
+                 numerator,
+                 label="Numerator",
+                 )
+
+    axes[2].plot(steps, 
+                 denominator,
+                 label="Denominator",
+                 )
+
+    plt.show()

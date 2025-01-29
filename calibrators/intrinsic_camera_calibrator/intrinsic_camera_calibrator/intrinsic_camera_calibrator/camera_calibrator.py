@@ -104,6 +104,12 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         # Calibration results
         self.estimated_fps = 0
         self.last_processed_stamp = None
+        self.num_training_post_rejection_inliers = 0
+        self.training_rms_error = 0.0
+        self.training_inlier_rms_error = 0.0
+        self.num_evaluation_post_rejection_inliers = 0
+        self.evaluation_rms_error = 0.0
+        self.evaluation_inlier_rms_error = 0.0
 
         # Camera models to use normally
         self.current_camera_model: CameraModel = None
@@ -795,6 +801,27 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         evaluation_rms_error: float,
         evaluation_inlier_rms_error: float,
     ):
+        if calibrated_model is None:
+            calibrator_type = self.calibrator_type_combobox.currentData()
+            self.calibrator_dict[calibrator_type].calibration_request.emit(
+                self.data_collector.clone_without_images()
+            )
+
+            self.calibrator_type_combobox.setEnabled(False)
+            self.calibration_parameters_button.setEnabled(False)
+            self.calibration_button.setEnabled(False)
+            self.evaluation_button.setEnabled(False)
+
+            self.calibration_status_label.setText("Calibration status: calibrating")
+            return
+        
+        self.num_training_post_rejection_inliers = num_training_post_rejection_inliers
+        self.training_rms_error = training_rms_error
+        self.training_inlier_rms_error = training_inlier_rms_error
+        self.num_evaluation_post_rejection_inliers = num_evaluation_post_rejection_inliers
+        self.evaluation_rms_error = evaluation_rms_error
+        self.evaluation_inlier_rms_error = evaluation_inlier_rms_error
+
         self.image_view_type_combobox.setEnabled(True)
         self.rectify_type_combobox.setEnabled(True)
         self.undistortion_alpha_spinbox.setEnabled(True)
@@ -856,6 +883,13 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.rectify_type_combobox.setEnabled(True)
         self.undistortion_alpha_spinbox.setEnabled(True)
 
+        self.num_training_post_rejection_inliers = num_training_post_rejection_inliers
+        self.training_rms_error = training_rms_error
+        self.training_inlier_rms_error = training_inlier_rms_error
+        self.num_evaluation_post_rejection_inliers = num_evaluation_post_rejection_inliers
+        self.evaluation_rms_error = evaluation_rms_error
+        self.evaluation_inlier_rms_error = evaluation_inlier_rms_error
+
         self.calibration_status_label.setText("Calibration status: idle")
         self.calibration_time_label.setText(f"Calibration time: {dt:.2f}s")  # noqa E231
         self.calibration_training_samples_label.setText(
@@ -913,6 +947,19 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             }
 
             yaml.dump(all_params, file, default_flow_style=False)
+    
+    def save_calibration_results(self, filename):
+        with open(filename, "w") as file:
+            calib_results = {
+                "num_training_post_rejection_inliers": self.num_training_post_rejection_inliers,
+                "training_rms_error": self.training_rms_error,
+                "training_inlier_rms_error": self.training_inlier_rms_error,
+                "num_evaluation_post_rejection_inliers": self.num_evaluation_post_rejection_inliers,
+                "evaluation_rms_error": self.evaluation_rms_error,
+                "evaluation_inlier_rms_error": self.evaluation_inlier_rms_error,
+            }
+
+            yaml.dump(calib_results, file, default_flow_style=False)
 
     def on_save_clicked(self):
         output_folder = QFileDialog.getExistingDirectory(
@@ -936,6 +983,7 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         )
 
         self.save_parameters(os.path.join(output_folder, "parameters.yaml"))
+        self.save_calibration_results(os.path.join(output_folder, "calib_results.yaml"))
 
         training_folder = os.path.join(output_folder, "training_images")
         evaluation_folder = os.path.join(output_folder, "evaluation_images")

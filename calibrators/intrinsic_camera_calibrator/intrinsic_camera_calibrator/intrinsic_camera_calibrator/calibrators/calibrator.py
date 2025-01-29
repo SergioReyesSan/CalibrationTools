@@ -33,6 +33,9 @@ from intrinsic_camera_calibrator.calibrators.utils import (
 from intrinsic_camera_calibrator.calibrators.utils import (
     plot_calibration_results_statistics as _plot_calibration_results_statistics,
 )
+from intrinsic_camera_calibrator.calibrators.utils import (
+    plot_distortion as _plot_distortion,
+)
 from intrinsic_camera_calibrator.calibrators.utils import add_detection
 from intrinsic_camera_calibrator.calibrators.utils import get_entropy
 from intrinsic_camera_calibrator.camera_models.camera_model import CameraModel
@@ -127,6 +130,34 @@ class Calibrator(ParameterizedClass, QObject):
     def get_model_info(self) -> Tuple[Dict, CameraModelEnum]:
         """Return the configuration of the camera model."""
         raise NotImplementedError
+    
+    def sanity_check_distortion_coefficients(self, camera_model: CameraModel):
+        k1, k2, p1, p2, k3, k4, k5, k6 = camera_model.d[0]
+
+        out_of_fov_mul_factor = 10.0  # 1.0 for real image size, larger value shows what happens outside of the image FOV
+        steps = np.arange(0.0, out_of_fov_mul_factor, 0.01)
+
+        x = (camera_model.width / 2 / max(camera_model.width, camera_model.height)) * steps
+        y = (camera_model.height / 2 / max(camera_model.width, camera_model.height)) * steps
+
+        r = np.sqrt(x**2 + y**2)
+        r2 = r**2
+        r4 = r2**2
+        r6 = r2 * r4
+
+        numerator = (1 + k1 * r2 + k2 * r4 + k3 * r6) 
+        denominator = (1 + k4 * r2 + k5 * r4 + k6 * r6)
+        radial_distortion = numerator / denominator
+
+        def allPositive(l):
+            return min(l) > 0
+
+        if allPositive(numerator) and allPositive(denominator):
+            print("Seems that everything is going well", flush=True)
+            return True
+        else:
+            print("Houston we have a problem", flush=True)
+            return False
 
     def _calibrate(self, data_collector: DataCollector):
         """
@@ -242,6 +273,25 @@ class Calibrator(ParameterizedClass, QObject):
             else np.inf
         )
 
+        # if not self.sanity_check_distortion_coefficients(calibrated_model):
+        #     for i in range(10):
+        #         print("Preparing for auto calibrate again, problem detected!!!!!!!",flush=True)
+        #     time.sleep(5)
+        #     self.calibration_results_signal.emit(
+        #         None,
+        #         dt,
+        #         num_training_detections,
+        #         num_training_pre_rejection_inliers,
+        #         num_training_post_rejection_inliers,
+        #         training_rms_error,
+        #         training_inlier_rms_error,
+        #         num_evaluation_detections,
+        #         num_evaluation_post_rejection_inliers,
+        #         evaluation_rms_error,
+        #         evaluation_inlier_rms_error,
+        #     )
+        #     return
+
         if plot_calibration_data_statistics:
             self._plot_calibration_data_statistics_impl(
                 calibrated_model,
@@ -259,6 +309,8 @@ class Calibrator(ParameterizedClass, QObject):
                 training_post_rejection_inliers,
                 raw_evaluation_detections,
             )
+        
+        self._plot_distortion(calibrated_model)
 
         self.calibration_results_signal.emit(
             calibrated_model,
@@ -366,6 +418,8 @@ class Calibrator(ParameterizedClass, QObject):
                 training_post_rejection_inliers,
                 raw_evaluation_detections,
             )
+        
+        self._plot_distortion(evaluation_model)
 
         self.evaluation_results_signal.emit(
             dt,
@@ -661,6 +715,21 @@ class Calibrator(ParameterizedClass, QObject):
                 viz_tilt_resolution,
                 viz_max_tilt_deg,
                 viz_z_cells,
+            ),
+            daemon=True,
+        )
+        plot_process.start()
+    
+    def _plot_distortion(self,
+        calibrated_model: CameraModel,
+    ):
+        """Plot the distortion statistics, requires to be done in another process."""
+        plot_process = mp.Process(
+            target=_plot_distortion,
+            args=(
+                calibrated_model.d,
+                calibrated_model.width,
+                calibrated_model.height,
             ),
             daemon=True,
         )
