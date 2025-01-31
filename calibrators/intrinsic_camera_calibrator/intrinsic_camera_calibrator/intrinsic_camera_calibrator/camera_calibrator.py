@@ -136,6 +136,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         self.skip_next_img = 0
         self.initialization_view = InitializationView(self, cfg)
 
+        # Evaluation results purpose
+        self.undistort_evaluation = []
+
     def make_image_view(self):
         self.image_view = ImageView()
 
@@ -292,6 +295,20 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         solver_layout.setAlignment(Qt.AlignTop)
         solver_layout.addWidget(self.calibrator_type_combobox)
         self.solver_group.setLayout(solver_layout)
+
+    def make_evaluation_data_group(self):
+        self.evaluation_group = QGroupBox("Evaluation data")
+        self.evaluation_group.setFlat(True)
+        self.save_eval_button = QPushButton("Save evaluation statistics")
+
+        self.save_eval_button.clicked.connect(self.on_save_eval_clicked)
+        self.save_eval_button.setEnabled(True)
+
+        evaluation_layout = QVBoxLayout()
+        evaluation_layout.setAlignment(Qt.AlignTop)
+        evaluation_layout.addWidget(self.save_eval_button)
+
+        self.evaluation_group.setLayout(evaluation_layout)
 
     def make_calibration_group(self):
         self.calibration_group = QGroupBox("Calibration control")
@@ -711,6 +728,9 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         # Detections group
         self.make_detection_group()
 
+        if self.operation_mode == OperationMode.EVALUATION:
+            self.make_evaluation_data_group()
+
         # Data collection group
         if self.operation_mode == OperationMode.CALIBRATION:
             self.make_data_collection_group()
@@ -723,9 +743,10 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
         if self.operation_mode == OperationMode.CALIBRATION:
             self.left_menu_layout.addWidget(self.calibration_group)
         self.left_menu_layout.addWidget(self.detector_options_group)
+        if self.operation_mode == OperationMode.EVALUATION:
+            self.right_menu_layout.addWidget(self.evaluation_group)
         self.left_menu_layout.addWidget(self.raw_detection_results_group)
         self.left_menu_layout.addWidget(self.single_shot_detection_results_group)
-
         self.right_menu_layout.addWidget(self.mode_options_group)
         if self.operation_mode == OperationMode.CALIBRATION:
             self.right_menu_layout.addWidget(self.data_collection_group)
@@ -1015,6 +1036,31 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
                 self.data_collector.get_evaluation_detection(index).get_flattened_object_points(),
             )
 
+    def on_save_eval_clicked(self):
+        if self.undistort_evaluation is None:
+            return
+        output_folder = QFileDialog.getExistingDirectory(
+            None,
+            "Select directory to save the evaluation result",
+            ".",
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks,
+        )
+
+        if output_folder is None or output_folder == "":
+            return
+
+        logging.info(f"Saving evaluation results to {output_folder}")
+
+        # training_folder = os.path.join(output_folder, "training_images")
+        evaluation_folder = os.path.join(output_folder, "evaluation_statistics")
+
+        if not os.path.exists(evaluation_folder):
+            os.mkdir(evaluation_folder)
+
+        filename = os.path.join(output_folder, "evaluation_statistics.yaml")
+        with open(filename, "w") as file:
+            yaml.dump(self.undistort_evaluation, file, default_flow_style=False)
+
     def process_detection_results(self, img: np.array, detection: BoardDetection, img_stamp: float):
         """Process the results from an object detection."""
         # Signal that the detector is free
@@ -1176,6 +1222,21 @@ class CameraIntrinsicsCalibratorUI(QMainWindow):
             self.single_shot_reprojection_error_rms_label.setText(
                 f"Reprojection error (rms): {reprojection_error_rms:.3f} px ({100.0 * reprojection_error_rms_relative:.2f}%)"  # noqa E231
             )
+
+            if self.operation_mode == OperationMode.EVALUATION:
+                self.undistort_evaluation.append(
+                    {
+                        "reprojection_error_max": float(reprojection_error_max),
+                        "reprojection_error_avg": float(reprojection_error_mean),
+                        "reprojection_error_rms": float(reprojection_error_rms),
+                        "linear_error_rms_rows": float(err_rms_rows),
+                        "linear_error_rms_cols": float(err_rms_cols),
+                        "percentage_error_rows": float(pct_err_rows),
+                        "percentage_error_cols": float(pct_err_cols),
+                        "aspect_ratio": float(detection.get_aspect_ratio_pattern(camera_model)),
+                    }
+                )
+
 
             if self.operation_mode == OperationMode.CALIBRATION:
                 self.training_occupancy_rate_label.setText(
